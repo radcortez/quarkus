@@ -1,5 +1,6 @@
 package io.quarkus.vertx.http.runtime.devmode;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,11 +20,20 @@ import io.quarkus.dev.spi.HotReplacementSetup;
 import io.quarkus.vertx.core.runtime.VertxCoreRecorder;
 import io.quarkus.vertx.http.runtime.VertxHttpRecorder;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.ext.web.RoutingContext;
 
 public class VertxHttpHotReplacementSetup implements HotReplacementSetup {
@@ -191,6 +201,65 @@ public class VertxHttpHotReplacementSetup implements HotReplacementSetup {
                     boolean restart = event.result();
                     if (restart) {
                         routingContext.request().headers().set(HEADER_NAME, "true");
+                        Vertx vertx = VertxCoreRecorder.getVertx().get();
+                        if (vertx instanceof VertxImpl) {
+                            HttpServerRequest request = routingContext.request();
+                            VertxTracer tracer = ((VertxImpl) vertx).tracer();
+                            Context context = vertx.getOrCreateContext();
+                            context.removeLocal("io.quarkus.opentelemetry.runtime.QuarkusContextStorage.otelContext");
+                            final Object trace = tracer.receiveRequest(context, null, TracingPolicy.ALWAYS,
+                                    new HttpRequest() {
+                                        @Override
+                                        public int id() {
+                                            return 0;
+                                        }
+
+                                        @Override
+                                        public String uri() {
+                                            return request.uri();
+                                        }
+
+                                        @Override
+                                        public String absoluteURI() {
+                                            return request.absoluteURI();
+                                        }
+
+                                        @Override
+                                        public HttpMethod method() {
+                                            return request.method();
+                                        }
+
+                                        @Override
+                                        public MultiMap headers() {
+                                            return request.headers();
+                                        }
+
+                                        @Override
+                                        public SocketAddress remoteAddress() {
+                                            return request.remoteAddress();
+                                        }
+                                    }, "", request.headers(), null);
+
+                            try {
+                                Class<?> wrapper = Class.forName("io.vertx.ext.web.impl.HttpServerRequestWrapper");
+                                Field delegate = wrapper.getDeclaredField("delegate");
+                                delegate.setAccessible(true);
+                                Object delegateRequest = delegate.get(request);
+
+                                wrapper = Class.forName("io.quarkus.vertx.http.runtime.AbstractRequestWrapper");
+                                delegate = wrapper.getDeclaredField("delegate");
+                                delegate.setAccessible(true);
+                                delegateRequest = delegate.get(delegateRequest);
+
+                                Class<?> serverRequest = Class.forName("io.vertx.core.http.impl.Http1xServerRequest");
+                                Field traceField = serverRequest.getDeclaredField("trace");
+                                traceField.setAccessible(true);
+                                traceField.set(delegateRequest, trace);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+
                         VertxHttpRecorder.getRootHandler().handle(routingContext.request());
                     } else {
                         routingContext.next();

@@ -28,6 +28,7 @@ import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.AdditionalIndexedClassesBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
+import io.quarkus.deployment.builditem.LiveReloadBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.opentelemetry.deployment.tracing.TracerProviderBuildItem;
@@ -35,9 +36,11 @@ import io.quarkus.opentelemetry.runtime.OpenTelemetryProducer;
 import io.quarkus.opentelemetry.runtime.OpenTelemetryRecorder;
 import io.quarkus.opentelemetry.runtime.QuarkusContextStorage;
 import io.quarkus.opentelemetry.runtime.config.OpenTelemetryConfig;
+import io.quarkus.opentelemetry.runtime.tracing.TracerRecorder;
 import io.quarkus.opentelemetry.runtime.tracing.cdi.WithSpanInterceptor;
 import io.quarkus.opentelemetry.runtime.tracing.intrumentation.reactivemessaging.ReactiveMessagingTracingDecorator;
 import io.quarkus.opentelemetry.runtime.tracing.intrumentation.restclient.OpenTelemetryClientFilter;
+import io.quarkus.opentelemetry.runtime.tracing.intrumentation.vertx.VertxTracerProducer;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.vertx.core.deployment.CoreVertxBuildItem;
@@ -59,6 +62,7 @@ public class OpenTelemetryProcessor {
         return AdditionalBeanBuildItem.builder()
                 .setUnremovable()
                 .addBeanClass(OpenTelemetryProducer.class)
+                .addBeanClass(VertxTracerProducer.class)
                 .build();
     }
 
@@ -155,8 +159,10 @@ public class OpenTelemetryProcessor {
     void createOpenTelemetry(
             OpenTelemetryConfig openTelemetryConfig,
             OpenTelemetryRecorder recorder,
+            TracerRecorder tracerRecorder,
             Optional<TracerProviderBuildItem> tracerProviderBuildItem,
-            LaunchModeBuildItem launchMode) {
+            LaunchModeBuildItem launchMode,
+            LiveReloadBuildItem liveReloadBuildItem) {
 
         if (launchMode.getLaunchMode() == LaunchMode.DEVELOPMENT || launchMode.getLaunchMode() == LaunchMode.TEST) {
             recorder.resetGlobalOpenTelemetryForDevMode();
@@ -166,6 +172,10 @@ public class OpenTelemetryProcessor {
                 .orElse(null);
         recorder.createOpenTelemetry(tracerProvider, openTelemetryConfig);
         recorder.eagerlyCreateContextStorage();
+
+        if (liveReloadBuildItem.isLiveReload()) {
+            tracerRecorder.reloadTracer();
+        }
     }
 
     @BuildStep

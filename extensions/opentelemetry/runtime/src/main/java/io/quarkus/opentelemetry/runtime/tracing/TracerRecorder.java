@@ -28,14 +28,16 @@ import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingOptions;
 
 @Recorder
 public class TracerRecorder {
+    public static final OpenTelemetryVertxTracingFactory FACTORY = new OpenTelemetryVertxTracingFactory();
+
     /* STATIC INIT */
     public Consumer<VertxOptions> getVertxTracingOptions() {
-        TracingOptions tracingOptions = new TracingOptions()
-                .setFactory(new OpenTelemetryVertxTracingFactory());
+        TracingOptions tracingOptions = new TracingOptions().setFactory(FACTORY);
         return vertxOptions -> vertxOptions.setTracingOptions(tracingOptions);
     }
 
@@ -44,6 +46,11 @@ public class TracerRecorder {
                 .setEnabled(true)
                 .setFactory(new OpenTelemetryVertxMetricsFactory());
         return vertxOptions -> vertxOptions.setMetricsOptions(metricsOptions);
+    }
+
+    public void reloadTracer() {
+        FACTORY.getVertxTracer()
+                .setDelegate(Arc.container().beanManager().createInstance().select(VertxTracer.class).get());
     }
 
     /* STATIC INIT */
