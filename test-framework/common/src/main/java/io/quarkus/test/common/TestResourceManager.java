@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -37,6 +38,10 @@ import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
+
+import io.quarkus.deployment.dev.testing.TestClassIndexer;
+import io.quarkus.deployment.dev.testing.TestStatus;
+import io.smallrye.config.SmallRyeConfigProviderResolver;
 
 /**
  * Manages {@link QuarkusTestResourceLifecycleManager}
@@ -272,7 +277,7 @@ public class TestResourceManager implements Closeable {
     }
 
     private TestResourceStartInfo buildTestResourceEntry(TestResourceClassEntry entry) {
-        Class<? extends QuarkusTestResourceLifecycleManager> testResourceClass = entry.clazz;
+        Class<? extends QuarkusTestResourceLifecycleManager> testResourceClass = (Class<? extends QuarkusTestResourceLifecycleManager>) entry.clazz;
         try {
             return new TestResourceStartInfo(testResourceClass.getConstructor().newInstance(), entry.args,
                     entry.configAnnotation);
@@ -327,7 +332,7 @@ public class TestResourceManager implements Closeable {
     private static Set<TestResourceClassEntry> getUniqueTestResourceClassEntries(Class<?> testClass,
             Path testClassLocation,
             Consumer<Set<TestResourceClassEntry>> afterMetaAnnotationAction) {
-        Class<?> testClassFromTCCL = alwaysFromTccl(testClass);
+        Class<?> testClassFromTCCL = alwaysFromTccl(testClass); // TODO this extra classload is annoying, but sort of necessary because we do lots of class == checks and also casting. It is possible to get rid of it, with some rewrite.
 
         Set<TestResourceClassEntry> uniqueEntries = new LinkedHashSet<>();
 
@@ -434,9 +439,15 @@ public class TestResourceManager implements Closeable {
         // collect all test supertypes for matching per-test targets
         Set<String> currentTestClassHierarchy = new HashSet<>();
         Class<?> current = testClass;
-        while (current != Object.class) {
+        // If this gets called for an @interface, the superclass will be null.
+        while (current != Object.class && current != null) {
             currentTestClassHierarchy.add(current.getName());
+            // @interface objects may not have a superclass
             current = current.getSuperclass();
+            if (current == null) {
+                throw new RuntimeException("Internal error: The class " + testClass
+                        + " is not a descendant of Object.class, so cannot be a Quarkus test.");
+            }
         }
         current = testClass.getEnclosingClass();
         while (current != null) {
@@ -533,6 +544,12 @@ public class TestResourceManager implements Closeable {
         return false;
     }
 
+    public static String getReloadGroupIdentifier(Set<TestResourceComparisonInfo> existing) {
+        // For now, we reload if it's restricted to class scope, and don't otherwise
+        String uniqueness = anyResourceRestrictedToClass(existing) ? UUID.randomUUID().toString() : "";
+        return existing.stream().map(Object::toString).sorted().collect(Collectors.joining()) + uniqueness;
+    }
+
     private static boolean anyResourceRestrictedToClass(Set<TestResourceComparisonInfo> testResources) {
         for (TestResourceComparisonInfo info : testResources) {
             if (info.scope == RESTRICTED_TO_CLASS) {
@@ -556,11 +573,11 @@ public class TestResourceManager implements Closeable {
         private final Annotation configAnnotation;
         private final TestResourceScope scope;
 
-        public TestResourceClassEntry(Class<? extends QuarkusTestResourceLifecycleManager> clazz, Map<String, String> args,
+        public TestResourceClassEntry(Class<?> clazz, Map<String, String> args,
                 Annotation configAnnotation,
                 boolean parallel,
                 TestResourceScope scope) {
-            this.clazz = clazz;
+            this.clazz = (Class<? extends QuarkusTestResourceLifecycleManager>) clazz;
             this.args = args;
             this.configAnnotation = configAnnotation;
             this.parallel = parallel;
@@ -589,7 +606,7 @@ public class TestResourceManager implements Closeable {
             return parallel;
         }
 
-        public Class<? extends QuarkusTestResourceLifecycleManager> testResourceLifecycleManagerClass() {
+        public Class<?> testResourceLifecycleManagerClass() {
             return clazz;
         }
 
