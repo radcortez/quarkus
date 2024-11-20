@@ -9,15 +9,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.ConfigValue;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logging.Logger;
 
+import io.quarkus.runtime.ConfigConfig;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
 import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config.SmallRyeConfigBuilderCustomizer;
 
 @Recorder
 public class ConfigRecorder {
@@ -64,11 +68,44 @@ public class ConfigRecorder {
             BuildTimeMismatchAtRuntime buildTimeMismatchAtRuntime = config
                     .getOptionalValue("quarkus.config.build-time-mismatch-at-runtime", BuildTimeMismatchAtRuntime.class)
                     .orElse(warn);
+
+            // Maybe it is a different instance?
+            SmallRyeConfig quarkusConfig = new QuarkusConfigFactory().getConfigFor(null, null);
+            if (!config.equals(quarkusConfig)) {
+                throw new IllegalStateException("SmallRyeConfig Classloaders mismatch!");
+            }
+
+            // Is it missing from the customizer?
+            SmallRyeConfigBuilder mappingBuilder = new SmallRyeConfigBuilder();
+            AbstractConfigBuilder.withCustomizer(mappingBuilder, "io.quarkus.runtime.generated.RunTimeConfig");
+            mappingBuilder.withCustomizers(new MissingMappingConfigBuilderCustomizer());
+            mappingBuilder.build();
+
+            // Does this fail even if present in the builder?
+            config.getConfigMapping(ConfigConfig.class);
+
             if (fail.equals(buildTimeMismatchAtRuntime)) {
                 throw new IllegalStateException(msg);
             } else if (warn.equals(buildTimeMismatchAtRuntime)) {
                 log.warn(msg);
             }
+        }
+    }
+
+    static class MissingMappingConfigBuilderCustomizer implements SmallRyeConfigBuilderCustomizer {
+        @Override
+        public void configBuilder(final SmallRyeConfigBuilder builder) {
+            Map<Class<?>, Set<String>> mappings = builder.getMappingsBuilder().getMappings();
+            for (Map.Entry<Class<?>, Set<String>> entry : mappings.entrySet()) {
+                for (String prefix : entry.getValue()) {
+                    log.info("Found mapping " + entry.getKey() + " with prefix " + prefix);
+                }
+            }
+        }
+
+        @Override
+        public int priority() {
+            return Integer.MAX_VALUE;
         }
     }
 
