@@ -10,7 +10,7 @@ import org.jboss.logging.Logger;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.annotations.Recorder;
-import io.quarkus.vertx.http.runtime.HttpConfiguration;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 import io.quarkus.vertx.http.runtime.filters.Filter;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.Route;
@@ -19,14 +19,14 @@ import io.vertx.ext.web.RoutingContext;
 @Recorder
 public class OpenApiRecorder {
     private static final Logger log = Logger.getLogger(OpenApiRecorder.class);
-    final RuntimeValue<HttpConfiguration> configuration;
+    final RuntimeValue<VertxHttpConfig> httpConfig;
 
-    public OpenApiRecorder(RuntimeValue<HttpConfiguration> configuration) {
-        this.configuration = configuration;
+    public OpenApiRecorder(RuntimeValue<VertxHttpConfig> httpConfig) {
+        this.httpConfig = httpConfig;
     }
 
     public Consumer<Route> corsFilter(Filter filter) {
-        if (configuration.getValue().corsEnabled && filter.getHandler() != null) {
+        if (httpConfig.getValue().corsEnabled() && filter.getHandler() != null) {
             return new Consumer<Route>() {
                 @Override
                 public void accept(Route route) {
