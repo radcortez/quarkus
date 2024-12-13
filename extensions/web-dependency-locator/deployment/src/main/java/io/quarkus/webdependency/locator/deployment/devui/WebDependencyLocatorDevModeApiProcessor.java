@@ -26,7 +26,7 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.pkg.builditem.CurateOutcomeBuildItem;
 import io.quarkus.maven.dependency.ArtifactKey;
 import io.quarkus.maven.dependency.ResolvedDependency;
-import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.VertxHttpBuildTimeConfig;
 
 public class WebDependencyLocatorDevModeApiProcessor {
 
@@ -38,7 +38,7 @@ public class WebDependencyLocatorDevModeApiProcessor {
 
     @BuildStep(onlyIf = IsDevelopment.class)
     public void findWebDependenciesAssets(
-            HttpBuildTimeConfig httpConfig,
+            VertxHttpBuildTimeConfig httpConfig,
             CurateOutcomeBuildItem curateOutcome,
             BuildProducer<WebDependencyLibrariesBuildItem> webDependencyLibrariesProducer) {
 
@@ -50,7 +50,8 @@ public class WebDependencyLocatorDevModeApiProcessor {
 
     }
 
-    private List<WebDependencyLibrary> getLibraries(HttpBuildTimeConfig httpConfig,
+    private List<WebDependencyLibrary> getLibraries(
+            VertxHttpBuildTimeConfig httpConfig,
             CurateOutcomeBuildItem curateOutcome, String path) {
         final List<WebDependencyLibrary> webDependencyLibraries = new ArrayList<>();
         final List<ClassPathElement> providers = QuarkusClassLoader.getElements(PREFIX + path, false);
@@ -62,7 +63,7 @@ public class WebDependencyLocatorDevModeApiProcessor {
                             () -> new HashMap<>(providers.size())));
             if (!webDependencyKeys.isEmpty()) {
                 // The root path of the application
-                final String rootPath = httpConfig.rootPath;
+                final String rootPath = httpConfig.rootPath();
                 // The root path of the webDependencies
                 final String webDependencyRootPath = (rootPath.endsWith("/")) ? rootPath + path + "/"
                         : rootPath + "/" + path + "/";

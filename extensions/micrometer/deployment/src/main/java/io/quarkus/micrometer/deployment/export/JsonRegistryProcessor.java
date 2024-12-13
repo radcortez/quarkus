@@ -18,7 +18,7 @@ import io.quarkus.micrometer.runtime.export.JsonRecorder;
 import io.quarkus.micrometer.runtime.registry.json.JsonMeterRegistry;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
-import io.quarkus.vertx.http.runtime.management.ManagementInterfaceBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.management.ManagementBuildTimeConfig;
 
 @BuildSteps(onlyIf = JsonRegistryProcessor.JsonRegistryEnabled.class)
 public class JsonRegistryProcessor {
@@ -41,7 +41,7 @@ public class JsonRegistryProcessor {
             BuildProducer<AdditionalBeanBuildItem> additionalBeans,
             BuildProducer<RegistryBuildItem> registries,
             NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem,
-            ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig,
+            ManagementBuildTimeConfig managementInterfaceBuildTimeConfig,
             LaunchModeBuildItem launchModeBuildItem,
             JsonRecorder recorder) {
         additionalBeans.produce(AdditionalBeanBuildItem.builder()

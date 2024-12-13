@@ -33,7 +33,7 @@ import io.quarkus.maven.dependency.ArtifactKey;
 import io.quarkus.maven.dependency.ResolvedDependency;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.quarkus.vertx.http.deployment.spi.GeneratedStaticResourceBuildItem;
-import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.VertxHttpBuildTimeConfig;
 import io.quarkus.webdependency.locator.runtime.WebDependencyLocatorRecorder;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
@@ -155,7 +155,7 @@ public class WebDependencyLocatorProcessor {
     @Record(ExecutionTime.RUNTIME_INIT)
     public void findWebDependenciesAndCreateHandler(
             WebDependencyLocatorConfig config,
-            HttpBuildTimeConfig httpConfig,
+            VertxHttpBuildTimeConfig httpConfig,
             BuildProducer<RouteBuildItem> routes,
             BuildProducer<ImportMapBuildItem> im,
             CurateOutcomeBuildItem curateOutcome,
@@ -202,7 +202,7 @@ public class WebDependencyLocatorProcessor {
 
     }
 
-    private RouteBuildItem createRouteBuildItem(WebDependencyLocatorRecorder recorder, HttpBuildTimeConfig httpConfig,
+    private RouteBuildItem createRouteBuildItem(WebDependencyLocatorRecorder recorder, VertxHttpBuildTimeConfig httpConfig,
             String path, Map<String, String> nameVersionMap) {
         Handler<RoutingContext> handler = recorder.getHandler(getRootPath(httpConfig, path),
                 nameVersionMap);
@@ -261,9 +261,9 @@ public class WebDependencyLocatorProcessor {
         return null;
     }
 
-    private String getRootPath(HttpBuildTimeConfig httpConfig, String path) {
+    private String getRootPath(VertxHttpBuildTimeConfig httpConfig, String path) {
         // The context path + the resources path
-        String rootPath = httpConfig.rootPath;
+        String rootPath = httpConfig.rootPath();
         return (rootPath.endsWith("/")) ? rootPath + path + "/" : rootPath + "/" + path + "/";
     }
 

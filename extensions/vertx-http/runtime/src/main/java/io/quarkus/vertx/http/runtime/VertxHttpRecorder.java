@@ -64,7 +64,6 @@ import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.ThreadPoolConfig;
 import io.quarkus.runtime.annotations.Recorder;
-import io.quarkus.runtime.configuration.ConfigInstantiator;
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.quarkus.runtime.configuration.MemorySize;
 import io.quarkus.runtime.logging.LogBuildTimeConfig;
@@ -78,7 +77,7 @@ import io.quarkus.vertx.http.HttpServerOptionsCustomizer;
 import io.quarkus.vertx.http.HttpServerStart;
 import io.quarkus.vertx.http.HttpsServerStart;
 import io.quarkus.vertx.http.ManagementInterface;
-import io.quarkus.vertx.http.runtime.HttpConfiguration.InsecureRequests;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig.InsecureRequests;
 import io.quarkus.vertx.http.runtime.devmode.RemoteSyncHandler;
 import io.quarkus.vertx.http.runtime.devmode.VertxHttpHotReplacementSetup;
 import io.quarkus.vertx.http.runtime.filters.Filter;
@@ -89,14 +88,16 @@ import io.quarkus.vertx.http.runtime.filters.accesslog.AccessLogHandler;
 import io.quarkus.vertx.http.runtime.filters.accesslog.AccessLogReceiver;
 import io.quarkus.vertx.http.runtime.filters.accesslog.DefaultAccessLogReceiver;
 import io.quarkus.vertx.http.runtime.filters.accesslog.JBossLoggingAccessLogReceiver;
-import io.quarkus.vertx.http.runtime.management.ManagementInterfaceBuildTimeConfig;
-import io.quarkus.vertx.http.runtime.management.ManagementInterfaceConfiguration;
+import io.quarkus.vertx.http.runtime.management.ManagementBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.management.ManagementConfig;
 import io.quarkus.vertx.http.runtime.options.HttpServerCommonHandlers;
 import io.quarkus.vertx.http.runtime.options.HttpServerOptionsUtils;
 import io.quarkus.vertx.http.runtime.options.TlsCertificateReloader;
 import io.smallrye.common.cpu.ProcessorInfo;
 import io.smallrye.common.vertx.VertxContext;
 import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config.SmallRyeConfigBuilderCustomizer;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
@@ -209,18 +210,19 @@ public class VertxHttpRecorder {
 
     private static final List<Long> refresTaskIds = new CopyOnWriteArrayList<>();
 
-    final HttpBuildTimeConfig httpBuildTimeConfig;
-    final ManagementInterfaceBuildTimeConfig managementBuildTimeConfig;
-    final RuntimeValue<HttpConfiguration> httpConfiguration;
+    final VertxHttpBuildTimeConfig httpBuildTimeConfig;
+    final ManagementBuildTimeConfig managementBuildTimeConfig;
+    final RuntimeValue<VertxHttpConfig> httpConfiguration;
 
-    final RuntimeValue<ManagementInterfaceConfiguration> managementConfiguration;
+    final RuntimeValue<ManagementConfig> managementConfiguration;
     private static volatile Handler<HttpServerRequest> managementRouter;
     private static volatile Handler<HttpServerRequest> managementRouterDelegate;
 
-    public VertxHttpRecorder(HttpBuildTimeConfig httpBuildTimeConfig,
-            ManagementInterfaceBuildTimeConfig managementBuildTimeConfig,
-            RuntimeValue<HttpConfiguration> httpConfiguration,
-            RuntimeValue<ManagementInterfaceConfiguration> managementConfiguration) {
+    public VertxHttpRecorder(
+            VertxHttpBuildTimeConfig httpBuildTimeConfig,
+            ManagementBuildTimeConfig managementBuildTimeConfig,
+            RuntimeValue<VertxHttpConfig> httpConfiguration,
+            RuntimeValue<ManagementConfig> managementConfiguration) {
         this.httpBuildTimeConfig = httpBuildTimeConfig;
         this.httpConfiguration = httpConfiguration;
         this.managementBuildTimeConfig = managementBuildTimeConfig;
@@ -257,6 +259,16 @@ public class VertxHttpRecorder {
         Vertx vertx;
         SmallRyeConfig config = ConfigUtils.emptyConfigBuilder()
                 .addDiscoveredSources()
+                .withCustomizers(new SmallRyeConfigBuilderCustomizer() {
+                    @Override
+                    public void configBuilder(final SmallRyeConfigBuilder builder) {
+                        new VertxConfigBuilder().configBuilder(builder);
+                    }
+                })
+                .withMapping(VertxHttpBuildTimeConfig.class)
+                .withMapping(VertxHttpConfig.class)
+                .withMapping(ManagementBuildTimeConfig.class)
+                .withMapping(ManagementConfig.class)
                 .withMapping(VertxConfiguration.class)
                 .withMapping(ThreadPoolConfig.class)
                 .withMapping(LiveReloadConfig.class)
@@ -270,22 +282,12 @@ public class VertxHttpRecorder {
         }
 
         try {
-            HttpBuildTimeConfig buildConfig = new HttpBuildTimeConfig();
-            ConfigInstantiator.handleObject(buildConfig);
-            ManagementInterfaceBuildTimeConfig managementBuildTimeConfig = new ManagementInterfaceBuildTimeConfig();
-            ConfigInstantiator.handleObject(managementBuildTimeConfig);
-            HttpConfiguration httpConfiguration = new HttpConfiguration();
-            ConfigInstantiator.handleObject(httpConfiguration);
-            ManagementInterfaceConfiguration managementConfig = new ManagementInterfaceConfiguration();
-            ConfigInstantiator.handleObject(managementConfig);
-            if (httpConfiguration.host == null) {
-                //VertxConfigBuilder does not come into play here
-                httpConfiguration.host = "localhost";
-            }
-            if (managementConfig.host == null) {
-                //VertxConfigBuilder does not come into play here
-                managementConfig.host = "localhost";
-            }
+            VertxHttpBuildTimeConfig httpBuildConfig = config.getConfigMapping(VertxHttpBuildTimeConfig.class);
+            ManagementBuildTimeConfig managementBuildTimeConfig = config
+                    .getConfigMapping(ManagementBuildTimeConfig.class);
+            VertxHttpConfig httpConfig = config.getConfigMapping(VertxHttpConfig.class);
+            ManagementConfig managementConfig = config.getConfigMapping(ManagementConfig.class);
+
             Router router = Router.router(vertx);
             if (hotReplacementHandler != null) {
                 router.route().order(RouteConstants.ROUTE_ORDER_HOT_REPLACEMENT).blockingHandler(hotReplacementHandler);
@@ -300,9 +302,9 @@ public class VertxHttpRecorder {
             }
             rootHandler = root;
 
-            var insecureRequestStrategy = getInsecureRequestStrategy(buildConfig, httpConfiguration.insecureRequests);
+            var insecureRequestStrategy = getInsecureRequestStrategy(httpBuildConfig, httpConfig.insecureRequests());
             //we can't really do
-            doServerStart(vertx, buildConfig, managementBuildTimeConfig, null, httpConfiguration, managementConfig,
+            doServerStart(vertx, httpBuildConfig, managementBuildTimeConfig, null, httpConfig, managementConfig,
                     LaunchMode.DEVELOPMENT,
                     new Supplier<Integer>() {
                         @Override
@@ -353,16 +355,16 @@ public class VertxHttpRecorder {
                 }
             });
         }
-        HttpConfiguration httpConfiguration = this.httpConfiguration.getValue();
-        ManagementInterfaceConfiguration managementConfig = this.managementConfiguration == null ? null
+        VertxHttpConfig httpConfiguration = this.httpConfiguration.getValue();
+        ManagementConfig managementConfig = this.managementConfiguration == null ? null
                 : this.managementConfiguration.getValue();
-        if (startSocket && (httpConfiguration.hostEnabled || httpConfiguration.domainSocketEnabled
-                || (managementConfig != null && managementConfig.hostEnabled)
-                || (managementConfig != null && managementConfig.domainSocketEnabled))) {
+        if (startSocket && (httpConfiguration.hostEnabled() || httpConfiguration.domainSocketEnabled()
+                || (managementConfig != null && managementConfig.hostEnabled())
+                || (managementConfig != null && managementConfig.domainSocketEnabled()))) {
             // Start the server
             if (closeTask == null) {
                 var insecureRequestStrategy = getInsecureRequestStrategy(httpBuildTimeConfig,
-                        httpConfiguration.insecureRequests);
+                        httpConfiguration.insecureRequests());
                 doServerStart(vertx.get(), httpBuildTimeConfig, managementBuildTimeConfig, managementRouter,
                         httpConfiguration, managementConfig, launchMode, ioThreads, websocketSubProtocols,
                         insecureRequestStrategy,
@@ -401,7 +403,7 @@ public class VertxHttpRecorder {
             List<String> knowClasses,
             List<ErrorPageAction> actions,
             Optional<RuntimeValue<SubmissionPublisher<String>>> publisher) {
-        HttpConfiguration httpConfiguration = this.httpConfiguration.getValue();
+        VertxHttpConfig httpConfiguration = this.httpConfiguration.getValue();
         // install the default route at the end
         Router httpRouteRouter = httpRouterRuntimeValue.getValue();
 
@@ -435,10 +437,10 @@ public class VertxHttpRecorder {
             defaultRouteHandler.accept(httpRouteRouter.route().order(RouteConstants.ROUTE_ORDER_DEFAULT));
         }
 
-        applyCompression(httpBuildTimeConfig.enableCompression, httpRouteRouter);
+        applyCompression(httpBuildTimeConfig.enableCompression(), httpRouteRouter);
         httpRouteRouter.route().last().failureHandler(
                 new QuarkusErrorHandler(launchMode.isDevOrTest(), decorateStacktrace(launchMode, logBuildTimeConfig),
-                        httpConfiguration.unhandledErrorContentTypeDefault, srcMainJava, knowClasses, actions));
+                        httpConfiguration.unhandledErrorContentTypeDefault(), srcMainJava, knowClasses, actions));
         for (BooleanSupplier requireBodyHandlerCondition : requireBodyHandlerConditions) {
             if (requireBodyHandlerCondition.getAsBoolean()) {
                 //if this is set then everything needs the body handler installed
@@ -454,12 +456,12 @@ public class VertxHttpRecorder {
             }
         }
 
-        HttpServerCommonHandlers.enforceMaxBodySize(httpConfiguration.limits, httpRouteRouter);
+        HttpServerCommonHandlers.enforceMaxBodySize(httpConfiguration.limits(), httpRouteRouter);
         // Filter Configuration per path
-        var filtersInConfig = httpConfiguration.filter;
+        var filtersInConfig = httpConfiguration.filter();
         HttpServerCommonHandlers.applyFilters(filtersInConfig, httpRouteRouter);
         // Headers sent on any request, regardless of the response
-        HttpServerCommonHandlers.applyHeaders(httpConfiguration.header, httpRouteRouter);
+        HttpServerCommonHandlers.applyHeaders(httpConfiguration.header(), httpRouteRouter);
 
         Handler<HttpServerRequest> root;
         if (rootPath.equals("/")) {
@@ -474,8 +476,8 @@ public class VertxHttpRecorder {
             root = mainRouter;
         }
 
-        warnIfProxyAddressForwardingAllowedWithMultipleHeaders(httpConfiguration.proxy);
-        root = HttpServerCommonHandlers.applyProxy(httpConfiguration.proxy, root, vertx);
+        warnIfProxyAddressForwardingAllowedWithMultipleHeaders(httpConfiguration.proxy());
+        root = HttpServerCommonHandlers.applyProxy(httpConfiguration.proxy(), root, vertx);
 
         boolean quarkusWrapperNeeded = false;
 
@@ -485,18 +487,18 @@ public class VertxHttpRecorder {
             quarkusWrapperNeeded = true;
         }
 
-        AccessLogConfig accessLog = httpConfiguration.accessLog;
-        if (accessLog.enabled) {
+        AccessLogConfig accessLog = httpConfiguration.accessLog();
+        if (accessLog.enabled()) {
             AccessLogReceiver receiver;
-            if (accessLog.logToFile) {
-                File outputDir = accessLog.logDirectory.isPresent() ? new File(accessLog.logDirectory.get()) : new File("");
-                receiver = new DefaultAccessLogReceiver(executor, outputDir, accessLog.baseFileName, accessLog.logSuffix,
-                        accessLog.rotate);
+            if (accessLog.logToFile()) {
+                File outputDir = accessLog.logDirectory().isPresent() ? new File(accessLog.logDirectory().get()) : new File("");
+                receiver = new DefaultAccessLogReceiver(executor, outputDir, accessLog.baseFileName(), accessLog.logSuffix(),
+                        accessLog.rotate());
             } else {
-                receiver = new JBossLoggingAccessLogReceiver(accessLog.category);
+                receiver = new JBossLoggingAccessLogReceiver(accessLog.category());
             }
             setupAccessLogHandler(mainRouterRuntimeValue, httpRouterRuntimeValue, frameworkRouter, receiver, rootPath,
-                    nonRootPath, accessLog.pattern, accessLog.consolidateReroutedRequests, accessLog.excludePattern);
+                    nonRootPath, accessLog.pattern(), accessLog.consolidateReroutedRequests(), accessLog.excludePattern());
             quarkusWrapperNeeded = true;
         }
 
@@ -512,14 +514,14 @@ public class VertxHttpRecorder {
             };
 
             setupAccessLogHandler(mainRouterRuntimeValue, httpRouterRuntimeValue, frameworkRouter, receiver, rootPath,
-                    nonRootPath, accessLog.pattern, accessLog.consolidateReroutedRequests,
-                    accessLog.excludePattern.or(() -> Optional.of("^" + nonRootPath + ".*")));
+                    nonRootPath, accessLog.pattern(), accessLog.consolidateReroutedRequests(),
+                    accessLog.excludePattern().or(() -> Optional.of("^" + nonRootPath + ".*")));
             quarkusWrapperNeeded = true;
         }
 
         BiConsumer<Cookie, HttpServerRequest> cookieFunction = null;
-        if (!httpConfiguration.sameSiteCookie.isEmpty()) {
-            cookieFunction = processSameSiteConfig(httpConfiguration.sameSiteCookie);
+        if (!httpConfiguration.sameSiteCookie().isEmpty()) {
+            cookieFunction = processSameSiteConfig(httpConfiguration.sameSiteCookie());
             quarkusWrapperNeeded = true;
         }
         BiConsumer<Cookie, HttpServerRequest> cookieConsumer = cookieFunction;
@@ -536,7 +538,7 @@ public class VertxHttpRecorder {
 
         Handler<HttpServerRequest> delegate = root;
         root = HttpServerCommonHandlers.enforceDuplicatedContext(delegate);
-        if (httpConfiguration.recordRequestStartTime) {
+        if (httpConfiguration.recordRequestStartTime()) {
             httpRouteRouter.route().order(RouteConstants.ROUTE_ORDER_RECORD_START_TIME).handler(new Handler<RoutingContext>() {
                 @Override
                 public void handle(RoutingContext event) {
@@ -561,23 +563,23 @@ public class VertxHttpRecorder {
 
             mr.route().last().failureHandler(
                     new QuarkusErrorHandler(launchMode.isDevOrTest(), decorateStacktrace(launchMode, logBuildTimeConfig),
-                            httpConfiguration.unhandledErrorContentTypeDefault, srcMainJava, knowClasses, actions));
+                            httpConfiguration.unhandledErrorContentTypeDefault(), srcMainJava, knowClasses, actions));
 
             mr.route().order(RouteConstants.ROUTE_ORDER_BODY_HANDLER_MANAGEMENT)
                     .handler(createBodyHandlerForManagementInterface());
             // We can use "*" here as the management interface is not expected to be used publicly.
             mr.route().order(RouteConstants.ROUTE_ORDER_CORS_MANAGEMENT).handler(CorsHandler.create().addOrigin("*"));
 
-            HttpServerCommonHandlers.applyFilters(managementConfiguration.getValue().filter, mr);
+            HttpServerCommonHandlers.applyFilters(managementConfiguration.getValue().filter(), mr);
             for (Filter filter : managementInterfaceFilterList) {
                 mr.route().order(filter.getPriority()).handler(filter.getHandler());
             }
 
-            HttpServerCommonHandlers.applyHeaders(managementConfiguration.getValue().header, mr);
-            applyCompression(managementBuildTimeConfig.enableCompression, mr);
+            HttpServerCommonHandlers.applyHeaders(managementConfiguration.getValue().header(), mr);
+            applyCompression(managementBuildTimeConfig.enableCompression(), mr);
 
             Handler<HttpServerRequest> handler = HttpServerCommonHandlers.enforceDuplicatedContext(mr);
-            handler = HttpServerCommonHandlers.applyProxy(managementConfiguration.getValue().proxy, handler, vertx);
+            handler = HttpServerCommonHandlers.applyProxy(managementConfiguration.getValue().proxy(), handler, vertx);
 
             int routesBeforeMiEvent = mr.getRoutes().size();
             event.select(ManagementInterface.class).fire(new ManagementInterfaceImpl(mr));
@@ -658,9 +660,9 @@ public class VertxHttpRecorder {
     }
 
     private void warnIfProxyAddressForwardingAllowedWithMultipleHeaders(ProxyConfig proxyConfig) {
-        boolean proxyAddressForwardingActivated = proxyConfig.proxyAddressForwarding;
-        boolean forwardedActivated = proxyConfig.allowForwarded;
-        boolean xForwardedActivated = proxyConfig.allowXForwarded.orElse(!forwardedActivated);
+        boolean proxyAddressForwardingActivated = proxyConfig.proxyAddressForwarding();
+        boolean forwardedActivated = proxyConfig.allowForwarded();
+        boolean xForwardedActivated = proxyConfig.allowXForwarded().orElse(!forwardedActivated);
 
         if (proxyAddressForwardingActivated && forwardedActivated && xForwardedActivated) {
             LOGGER.warn(
@@ -672,11 +674,11 @@ public class VertxHttpRecorder {
     }
 
     private static CompletableFuture<HttpServer> initializeManagementInterfaceWithDomainSocket(Vertx vertx,
-            ManagementInterfaceBuildTimeConfig managementBuildTimeConfig, Handler<HttpServerRequest> managementRouter,
-            ManagementInterfaceConfiguration managementConfig,
+            ManagementBuildTimeConfig managementBuildTimeConfig, Handler<HttpServerRequest> managementRouter,
+            ManagementConfig managementConfig,
             List<String> websocketSubProtocols) {
         CompletableFuture<HttpServer> managementInterfaceDomainSocketFuture = new CompletableFuture<>();
-        if (!managementBuildTimeConfig.enabled || managementRouter == null || managementConfig == null) {
+        if (!managementBuildTimeConfig.enabled() || managementRouter == null || managementConfig == null) {
             managementInterfaceDomainSocketFuture.complete(null);
             return managementInterfaceDomainSocketFuture;
         }
@@ -705,13 +707,13 @@ public class VertxHttpRecorder {
     }
 
     private static CompletableFuture<HttpServer> initializeManagementInterface(Vertx vertx,
-            ManagementInterfaceBuildTimeConfig managementBuildTimeConfig, Handler<HttpServerRequest> managementRouter,
-            ManagementInterfaceConfiguration managementConfig,
+            ManagementBuildTimeConfig managementBuildTimeConfig, Handler<HttpServerRequest> managementRouter,
+            ManagementConfig managementConfig,
             LaunchMode launchMode,
             List<String> websocketSubProtocols, TlsConfigurationRegistry registry) throws IOException {
         httpManagementServerOptions = null;
         CompletableFuture<HttpServer> managementInterfaceFuture = new CompletableFuture<>();
-        if (!managementBuildTimeConfig.enabled || managementRouter == null || managementConfig == null) {
+        if (!managementBuildTimeConfig.enabled() || managementRouter == null || managementConfig == null) {
             managementInterfaceFuture.complete(null);
             return managementInterfaceFuture;
         }
@@ -737,11 +739,11 @@ public class VertxHttpRecorder {
                                             + httpManagementServerOptions.getPort(), ar.cause()));
                         } else {
                             if (httpManagementServerOptions.isSsl()
-                                    && (managementConfig.ssl.certificate.reloadPeriod.isPresent())) {
+                                    && (managementConfig.ssl().certificate().reloadPeriod().isPresent())) {
                                 try {
                                     long l = TlsCertificateReloader.initCertReloadingAction(
-                                            vertx, ar.result(), httpManagementServerOptions, managementConfig.ssl, registry,
-                                            managementConfig.tlsConfigurationName);
+                                            vertx, ar.result(), httpManagementServerOptions, managementConfig.ssl(), registry,
+                                            managementConfig.tlsConfigurationName());
                                     if (l != -1) {
                                         refresTaskIds.add(l);
                                     }
@@ -754,7 +756,7 @@ public class VertxHttpRecorder {
                             if (httpManagementServerOptions.isSsl()) {
                                 CDI.current().select(HttpCertificateUpdateEventListener.class).get()
                                         .register(ar.result(),
-                                                managementConfig.tlsConfigurationName.orElse(TlsConfig.DEFAULT_NAME),
+                                                managementConfig.tlsConfigurationName().orElse(TlsConfig.DEFAULT_NAME),
                                                 "management interface");
                             }
 
@@ -780,14 +782,14 @@ public class VertxHttpRecorder {
         return managementInterfaceFuture;
     }
 
-    private static CompletableFuture<String> initializeMainHttpServer(Vertx vertx, HttpBuildTimeConfig httpBuildTimeConfig,
-            HttpConfiguration httpConfiguration,
+    private static CompletableFuture<String> initializeMainHttpServer(Vertx vertx, VertxHttpBuildTimeConfig httpBuildTimeConfig,
+            VertxHttpConfig httpConfiguration,
             LaunchMode launchMode,
             Supplier<Integer> eventLoops, List<String> websocketSubProtocols, InsecureRequests insecureRequestStrategy,
             TlsConfigurationRegistry registry)
             throws IOException {
 
-        if (!httpConfiguration.hostEnabled && !httpConfiguration.domainSocketEnabled) {
+        if (!httpConfiguration.hostEnabled() && !httpConfiguration.domainSocketEnabled()) {
             return CompletableFuture.completedFuture(null);
         }
 
@@ -824,15 +826,15 @@ public class VertxHttpRecorder {
         }
         httpMainSslServerOptions = tmpSslConfig;
 
-        if (insecureRequestStrategy != HttpConfiguration.InsecureRequests.ENABLED
+        if (insecureRequestStrategy != VertxHttpConfig.InsecureRequests.ENABLED
                 && httpMainSslServerOptions == null) {
             throw new IllegalStateException("Cannot set quarkus.http.insecure-requests without enabling SSL.");
         }
 
         int eventLoopCount = eventLoops.get();
         final int ioThreads;
-        if (httpConfiguration.ioThreads.isPresent()) {
-            ioThreads = Math.min(httpConfiguration.ioThreads.getAsInt(), eventLoopCount);
+        if (httpConfiguration.ioThreads().isPresent()) {
+            ioThreads = Math.min(httpConfiguration.ioThreads().getAsInt(), eventLoopCount);
         } else if (launchMode.isDevOrTest()) {
             ioThreads = Math.min(2, eventLoopCount); //Don't start ~100 threads to run a couple unit tests
         } else {
@@ -884,9 +886,9 @@ public class VertxHttpRecorder {
         return futureResult;
     }
 
-    private static void doServerStart(Vertx vertx, HttpBuildTimeConfig httpBuildTimeConfig,
-            ManagementInterfaceBuildTimeConfig managementBuildTimeConfig, Handler<HttpServerRequest> managementRouter,
-            HttpConfiguration httpConfiguration, ManagementInterfaceConfiguration managementConfig,
+    private static void doServerStart(Vertx vertx, VertxHttpBuildTimeConfig httpBuildTimeConfig,
+            ManagementBuildTimeConfig managementBuildTimeConfig, Handler<HttpServerRequest> managementRouter,
+            VertxHttpConfig httpConfiguration, ManagementConfig managementConfig,
             LaunchMode launchMode,
             Supplier<Integer> eventLoops, List<String> websocketSubProtocols,
             InsecureRequests insecureRequestStrategy,
@@ -1052,9 +1054,9 @@ public class VertxHttpRecorder {
     }
 
     private static HttpServerOptions createHttpServerOptions(
-            HttpBuildTimeConfig buildTimeConfig, HttpConfiguration httpConfiguration,
+            VertxHttpBuildTimeConfig buildTimeConfig, VertxHttpConfig httpConfiguration,
             LaunchMode launchMode, List<String> websocketSubProtocols) {
-        if (!httpConfiguration.hostEnabled) {
+        if (!httpConfiguration.hostEnabled()) {
             return null;
         }
         // TODO other config properties
@@ -1064,16 +1066,16 @@ public class VertxHttpRecorder {
 
         HttpServerOptionsUtils.applyCommonOptions(options, buildTimeConfig, httpConfiguration, websocketSubProtocols);
 
-        httpConfiguration.websocketServer.maxFrameSize.ifPresent(s -> options.setMaxWebSocketFrameSize(s));
-        httpConfiguration.websocketServer.maxMessageSize.ifPresent(s -> options.setMaxWebSocketMessageSize(s));
+        httpConfiguration.websocketServer().maxFrameSize().ifPresent(s -> options.setMaxWebSocketFrameSize(s));
+        httpConfiguration.websocketServer().maxMessageSize().ifPresent(s -> options.setMaxWebSocketMessageSize(s));
 
         return options;
     }
 
     private static HttpServerOptions createHttpServerOptionsForManagementInterface(
-            ManagementInterfaceBuildTimeConfig buildTimeConfig, ManagementInterfaceConfiguration httpConfiguration,
+            ManagementBuildTimeConfig buildTimeConfig, ManagementConfig httpConfiguration,
             LaunchMode launchMode, List<String> websocketSubProtocols) {
-        if (!httpConfiguration.hostEnabled) {
+        if (!httpConfiguration.hostEnabled()) {
             return null;
         }
         HttpServerOptions options = new HttpServerOptions();
@@ -1087,33 +1089,33 @@ public class VertxHttpRecorder {
     }
 
     private static HttpServerOptions createDomainSocketOptions(
-            HttpBuildTimeConfig buildTimeConfig, HttpConfiguration httpConfiguration,
+            VertxHttpBuildTimeConfig buildTimeConfig, VertxHttpConfig httpConfiguration,
             List<String> websocketSubProtocols) {
-        if (!httpConfiguration.domainSocketEnabled) {
+        if (!httpConfiguration.domainSocketEnabled()) {
             return null;
         }
         HttpServerOptions options = new HttpServerOptions();
 
         HttpServerOptionsUtils.applyCommonOptions(options, buildTimeConfig, httpConfiguration, websocketSubProtocols);
         // Override the host (0.0.0.0 by default) with the configured domain socket.
-        options.setHost(httpConfiguration.domainSocket);
+        options.setHost(httpConfiguration.domainSocket());
 
         // Check if we can write into the domain socket directory
         // We can do this check using a blocking API as the execution is done from the main thread (not an I/O thread)
-        File file = new File(httpConfiguration.domainSocket);
+        File file = new File(httpConfiguration.domainSocket());
         if (!file.getParentFile().canWrite()) {
             LOGGER.warnf(
                     "Unable to write in the domain socket directory (`%s`). Binding to the socket is likely going to fail.",
-                    httpConfiguration.domainSocket);
+                    httpConfiguration.domainSocket());
         }
 
         return options;
     }
 
     private static HttpServerOptions createDomainSocketOptionsForManagementInterface(
-            ManagementInterfaceBuildTimeConfig buildTimeConfig, ManagementInterfaceConfiguration httpConfiguration,
+            ManagementBuildTimeConfig buildTimeConfig, ManagementConfig httpConfiguration,
             List<String> websocketSubProtocols) {
-        if (!httpConfiguration.domainSocketEnabled) {
+        if (!httpConfiguration.domainSocketEnabled()) {
             return null;
         }
         HttpServerOptions options = new HttpServerOptions();
@@ -1121,15 +1123,15 @@ public class VertxHttpRecorder {
         HttpServerOptionsUtils.applyCommonOptionsForManagementInterface(options, buildTimeConfig, httpConfiguration,
                 websocketSubProtocols);
         // Override the host (0.0.0.0 by default) with the configured domain socket.
-        options.setHost(httpConfiguration.domainSocket);
+        options.setHost(httpConfiguration.domainSocket());
 
         // Check if we can write into the domain socket directory
         // We can do this check using a blocking API as the execution is done from the main thread (not an I/O thread)
-        File file = new File(httpConfiguration.domainSocket);
+        File file = new File(httpConfiguration.domainSocket());
         if (!file.getParentFile().canWrite()) {
             LOGGER.warnf(
                     "Unable to write in the domain socket directory (`%s`). Binding to the socket is likely going to fail.",
-                    httpConfiguration.domainSocket);
+                    httpConfiguration.domainSocket());
         }
 
         return options;
@@ -1190,15 +1192,15 @@ public class VertxHttpRecorder {
         private volatile boolean clearHttpProperty = false;
         private volatile boolean clearHttpsProperty = false;
         private volatile PortSystemProperties portSystemProperties;
-        private final HttpConfiguration.InsecureRequests insecureRequests;
-        private final HttpConfiguration quarkusConfig;
+        private final VertxHttpConfig.InsecureRequests insecureRequests;
+        private final VertxHttpConfig quarkusConfig;
         private final AtomicInteger connectionCount;
         private final List<Long> reloadingTasks = new CopyOnWriteArrayList<>();
         private final AtomicBoolean startEventsFired;
 
         public WebDeploymentVerticle(HttpServerOptions httpOptions, HttpServerOptions httpsOptions,
                 HttpServerOptions domainSocketOptions, LaunchMode launchMode,
-                InsecureRequests insecureRequests, HttpConfiguration quarkusConfig, AtomicInteger connectionCount,
+                InsecureRequests insecureRequests, VertxHttpConfig quarkusConfig, AtomicInteger connectionCount,
                 TlsConfigurationRegistry registry, AtomicBoolean startEventsFired) {
             this.httpOptions = httpOptions;
             this.httpsOptions = httpsOptions;
@@ -1217,7 +1219,7 @@ public class VertxHttpRecorder {
             assert Context.isOnEventLoopThread();
 
             final AtomicInteger remainingCount = new AtomicInteger(0);
-            boolean httpServerEnabled = httpOptions != null && insecureRequests != HttpConfiguration.InsecureRequests.DISABLED;
+            boolean httpServerEnabled = httpOptions != null && insecureRequests != VertxHttpConfig.InsecureRequests.DISABLED;
             if (httpServerEnabled) {
                 remainingCount.incrementAndGet();
             }
@@ -1238,7 +1240,7 @@ public class VertxHttpRecorder {
 
             if (httpServerEnabled) {
                 httpServer = vertx.createHttpServer(httpOptions);
-                if (insecureRequests == HttpConfiguration.InsecureRequests.ENABLED) {
+                if (insecureRequests == VertxHttpConfig.InsecureRequests.ENABLED) {
                     httpServer.requestHandler(ACTUAL_ROOT);
                 } else {
                     httpServer.requestHandler(new Handler<HttpServerRequest>() {
@@ -1320,12 +1322,12 @@ public class VertxHttpRecorder {
                 Promise<Void> startFuture, AtomicInteger remainingCount, AtomicInteger currentConnectionCount,
                 ArcContainer container, boolean notifyStartObservers) {
 
-            if (quarkusConfig.limits.maxConnections.isPresent() && quarkusConfig.limits.maxConnections.getAsInt() > 0) {
+            if (quarkusConfig.limits().maxConnections().isPresent() && quarkusConfig.limits().maxConnections().getAsInt() > 0) {
                 var tracker = vertx.isMetricsEnabled()
                         ? ((ExtendedQuarkusVertxHttpMetrics) ((VertxInternal) vertx).metricsSPI()).getHttpConnectionTracker()
                         : ExtendedQuarkusVertxHttpMetrics.NOOP_CONNECTION_TRACKER;
 
-                final int maxConnections = quarkusConfig.limits.maxConnections.getAsInt();
+                final int maxConnections = quarkusConfig.limits().maxConnections().getAsInt();
                 tracker.initialize(maxConnections, currentConnectionCount);
                 httpServer.connectionHandler(new Handler<HttpConnection>() {
 
@@ -1383,11 +1385,11 @@ public class VertxHttpRecorder {
                             portSystemProperties.set(schema, actualPort, launchMode);
                         }
 
-                        if (https && (quarkusConfig.ssl.certificate.reloadPeriod.isPresent())) {
+                        if (https && (quarkusConfig.ssl().certificate().reloadPeriod().isPresent())) {
                             try {
                                 long l = TlsCertificateReloader.initCertReloadingAction(
-                                        vertx, httpsServer, httpsOptions, quarkusConfig.ssl, registry,
-                                        quarkusConfig.tlsConfigurationName);
+                                        vertx, httpsServer, httpsOptions, quarkusConfig.ssl(), registry,
+                                        quarkusConfig.tlsConfigurationName());
                                 if (l != -1) {
                                     reloadingTasks.add(l);
                                 }
@@ -1399,7 +1401,8 @@ public class VertxHttpRecorder {
 
                         if (https) {
                             container.instance(HttpCertificateUpdateEventListener.class).get()
-                                    .register(event.result(), quarkusConfig.tlsConfigurationName.orElse(TlsConfig.DEFAULT_NAME),
+                                    .register(event.result(),
+                                            quarkusConfig.tlsConfigurationName().orElse(TlsConfig.DEFAULT_NAME),
                                             "http server");
                         }
 
@@ -1581,11 +1584,11 @@ public class VertxHttpRecorder {
         if (maxBodySize.isPresent()) {
             bodyHandler.setBodyLimit(maxBodySize.get().asLongValue());
         }
-        bodyHandler.setHandleFileUploads(bodyConfig.handleFileUploads);
-        bodyHandler.setUploadsDirectory(bodyConfig.uploadsDirectory);
-        bodyHandler.setDeleteUploadedFilesOnEnd(bodyConfig.deleteUploadedFilesOnEnd);
-        bodyHandler.setMergeFormAttributes(bodyConfig.mergeFormAttributes);
-        bodyHandler.setPreallocateBodyBuffer(bodyConfig.preallocateBodyBuffer);
+        bodyHandler.setHandleFileUploads(bodyConfig.handleFileUploads());
+        bodyHandler.setUploadsDirectory(bodyConfig.uploadsDirectory());
+        bodyHandler.setDeleteUploadedFilesOnEnd(bodyConfig.deleteUploadedFilesOnEnd());
+        bodyHandler.setMergeFormAttributes(bodyConfig.mergeFormAttributes());
+        bodyHandler.setPreallocateBodyBuffer(bodyConfig.preallocateBodyBuffer());
         return new Handler<RoutingContext>() {
             @Override
             public void handle(RoutingContext event) {
@@ -1625,13 +1628,13 @@ public class VertxHttpRecorder {
     }
 
     public Handler<RoutingContext> createBodyHandler() {
-        Optional<MemorySize> maxBodySize = httpConfiguration.getValue().limits.maxBodySize;
-        return configureAndGetBody(maxBodySize, httpConfiguration.getValue().body);
+        Optional<MemorySize> maxBodySize = httpConfiguration.getValue().limits().maxBodySize();
+        return configureAndGetBody(maxBodySize, httpConfiguration.getValue().body());
     }
 
     public Handler<RoutingContext> createBodyHandlerForManagementInterface() {
-        Optional<MemorySize> maxBodySize = managementConfiguration.getValue().limits.maxBodySize;
-        return configureAndGetBody(maxBodySize, managementConfiguration.getValue().body);
+        Optional<MemorySize> maxBodySize = managementConfiguration.getValue().limits().maxBodySize();
+        return configureAndGetBody(maxBodySize, managementConfiguration.getValue().body());
     }
 
     private static final List<HttpMethod> CAN_HAVE_BODY = Arrays.asList(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH,
@@ -1643,24 +1646,24 @@ public class VertxHttpRecorder {
         BiFunction<Cookie, HttpServerRequest, Boolean> last = null;
 
         for (Map.Entry<String, SameSiteCookieConfig> entry : new TreeMap<>(httpConfiguration).entrySet()) {
-            Pattern p = Pattern.compile(entry.getKey(), entry.getValue().caseSensitive ? 0 : Pattern.CASE_INSENSITIVE);
+            Pattern p = Pattern.compile(entry.getKey(), entry.getValue().caseSensitive() ? 0 : Pattern.CASE_INSENSITIVE);
             BiFunction<Cookie, HttpServerRequest, Boolean> biFunction = new BiFunction<Cookie, HttpServerRequest, Boolean>() {
                 @Override
                 public Boolean apply(Cookie cookie, HttpServerRequest request) {
                     if (p.matcher(cookie.getName()).matches()) {
-                        if (entry.getValue().value == CookieSameSite.NONE) {
-                            if (entry.getValue().enableClientChecker) {
+                        if (entry.getValue().value() == CookieSameSite.NONE) {
+                            if (entry.getValue().enableClientChecker()) {
                                 String userAgent = request.getHeader(HttpHeaders.USER_AGENT);
                                 if (userAgent != null
                                         && SameSiteNoneIncompatibleClientChecker.isSameSiteNoneIncompatible(userAgent)) {
                                     return false;
                                 }
                             }
-                            if (entry.getValue().addSecureForNone) {
+                            if (entry.getValue().addSecureForNone()) {
                                 cookie.setSecure(true);
                             }
                         }
-                        cookie.setSameSite(entry.getValue().value);
+                        cookie.setSameSite(entry.getValue().value());
                         return true;
                     }
                     return false;

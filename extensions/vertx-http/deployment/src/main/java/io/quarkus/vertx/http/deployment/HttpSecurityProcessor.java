@@ -67,9 +67,9 @@ import io.quarkus.security.spi.AdditionalSecuredMethodsBuildItem;
 import io.quarkus.security.spi.AdditionalSecurityAnnotationBuildItem;
 import io.quarkus.security.spi.AdditionalSecurityConstrainerEventPropsBuildItem;
 import io.quarkus.security.spi.runtime.MethodDescription;
-import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
-import io.quarkus.vertx.http.runtime.HttpConfiguration;
-import io.quarkus.vertx.http.runtime.management.ManagementInterfaceBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.VertxHttpBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
+import io.quarkus.vertx.http.runtime.management.ManagementBuildTimeConfig;
 import io.quarkus.vertx.http.runtime.security.AuthorizationPolicyStorage;
 import io.quarkus.vertx.http.runtime.security.BasicAuthenticationMechanism;
 import io.quarkus.vertx.http.runtime.security.EagerSecurityInterceptorStorage;
@@ -119,12 +119,13 @@ public class HttpSecurityProcessor {
     @Record(ExecutionTime.STATIC_INIT)
     AdditionalBeanBuildItem initFormAuth(
             HttpSecurityRecorder recorder,
-            HttpBuildTimeConfig buildTimeConfig,
+            VertxHttpBuildTimeConfig buildTimeConfig,
             BuildProducer<RouteBuildItem> filterBuildItemBuildProducer) {
-        if (buildTimeConfig.auth.form.enabled) {
-            if (!buildTimeConfig.auth.proactive) {
-                filterBuildItemBuildProducer.produce(RouteBuildItem.builder().route(buildTimeConfig.auth.form.postLocation)
-                        .handler(recorder.formAuthPostHandler()).build());
+        if (buildTimeConfig.auth().form().enabled()) {
+            if (!buildTimeConfig.auth().proactive()) {
+                filterBuildItemBuildProducer
+                        .produce(RouteBuildItem.builder().route(buildTimeConfig.auth().form().postLocation())
+                                .handler(recorder.formAuthPostHandler()).build());
             }
             return AdditionalBeanBuildItem.builder().setUnremovable().addBeanClass(FormAuthenticationMechanism.class)
                     .setDefaultScope(SINGLETON).build();
@@ -133,7 +134,7 @@ public class HttpSecurityProcessor {
     }
 
     @BuildStep
-    AdditionalBeanBuildItem initMtlsClientAuth(HttpBuildTimeConfig buildTimeConfig) {
+    AdditionalBeanBuildItem initMtlsClientAuth(VertxHttpBuildTimeConfig buildTimeConfig) {
         if (isMtlsClientAuthenticationEnabled(buildTimeConfig)) {
             return AdditionalBeanBuildItem.builder().setUnremovable().addBeanClass(MtlsAuthenticationMechanism.class)
                     .setDefaultScope(SINGLETON).build();
@@ -145,15 +146,16 @@ public class HttpSecurityProcessor {
     @Record(ExecutionTime.RUNTIME_INIT)
     void setMtlsCertificateRoleProperties(
             HttpSecurityRecorder recorder,
-            HttpConfiguration config,
-            HttpBuildTimeConfig buildTimeConfig) {
+            VertxHttpConfig config,
+            VertxHttpBuildTimeConfig buildTimeConfig) {
         if (isMtlsClientAuthenticationEnabled(buildTimeConfig)) {
             recorder.setMtlsCertificateRoleProperties(config);
         }
     }
 
     @BuildStep(onlyIf = IsApplicationBasicAuthRequired.class)
-    void detectBasicAuthImplicitlyRequired(HttpBuildTimeConfig buildTimeConfig,
+    void detectBasicAuthImplicitlyRequired(
+            VertxHttpBuildTimeConfig buildTimeConfig,
             BeanRegistrationPhaseBuildItem beanRegistrationPhaseBuildItem, ApplicationIndexBuildItem applicationIndexBuildItem,
             BuildProducer<SystemPropertyBuildItem> systemPropertyProducer,
             List<EagerSecurityInterceptorBindingBuildItem> eagerSecurityInterceptorBindings) {
@@ -187,7 +189,8 @@ public class HttpSecurityProcessor {
     }
 
     @BuildStep(onlyIf = IsApplicationBasicAuthRequired.class)
-    AdditionalBeanBuildItem initBasicAuth(HttpBuildTimeConfig buildTimeConfig,
+    AdditionalBeanBuildItem initBasicAuth(
+            VertxHttpBuildTimeConfig buildTimeConfig,
             BuildProducer<AnnotationsTransformerBuildItem> annotationsTransformerProducer,
             BuildProducer<SecurityInformationBuildItem> securityInformationProducer) {
 
@@ -199,27 +202,28 @@ public class HttpSecurityProcessor {
                     .transform(ctx -> ctx.add(DefaultBean.class))));
         }
 
-        if (buildTimeConfig.auth.basic.isPresent() && buildTimeConfig.auth.basic.get()) {
+        if (buildTimeConfig.auth().basic().isPresent() && buildTimeConfig.auth().basic().get()) {
             securityInformationProducer.produce(SecurityInformationBuildItem.BASIC());
         }
 
         return AdditionalBeanBuildItem.builder().setUnremovable().addBeanClass(BasicAuthenticationMechanism.class).build();
     }
 
-    private static boolean makeBasicAuthMechDefaultBean(HttpBuildTimeConfig buildTimeConfig) {
-        return !buildTimeConfig.auth.form.enabled && !isMtlsClientAuthenticationEnabled(buildTimeConfig)
-                && !buildTimeConfig.auth.basic.orElse(false);
+    private static boolean makeBasicAuthMechDefaultBean(VertxHttpBuildTimeConfig buildTimeConfig) {
+        return !buildTimeConfig.auth().form().enabled() && !isMtlsClientAuthenticationEnabled(buildTimeConfig)
+                && !buildTimeConfig.auth().basic().orElse(false);
     }
 
-    private static boolean applicationBasicAuthRequired(HttpBuildTimeConfig buildTimeConfig,
-            ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig) {
+    private static boolean applicationBasicAuthRequired(
+            VertxHttpBuildTimeConfig buildTimeConfig,
+            ManagementBuildTimeConfig managementInterfaceBuildTimeConfig) {
         //basic auth explicitly disabled
-        if (buildTimeConfig.auth.basic.isPresent() && !buildTimeConfig.auth.basic.get()) {
+        if (buildTimeConfig.auth().basic().isPresent() && !buildTimeConfig.auth().basic().get()) {
             return false;
         }
-        if (!buildTimeConfig.auth.basic.orElse(false)) {
-            if ((buildTimeConfig.auth.form.enabled || isMtlsClientAuthenticationEnabled(buildTimeConfig))
-                    || managementInterfaceBuildTimeConfig.auth.basic.orElse(false)) {
+        if (!buildTimeConfig.auth().basic().orElse(false)) {
+            if ((buildTimeConfig.auth().form().enabled() || isMtlsClientAuthenticationEnabled(buildTimeConfig))
+                    || managementInterfaceBuildTimeConfig.auth().basic().orElse(false)) {
                 //if form auth is enabled and we are not then we don't install
                 return false;
             }
@@ -236,9 +240,9 @@ public class HttpSecurityProcessor {
             BuildProducer<AdditionalBeanBuildItem> beanProducer,
             Optional<HttpAuthenticationHandlerBuildItem> authenticationHandlerBuildItem,
             Capabilities capabilities,
-            HttpBuildTimeConfig buildTimeConfig,
+            VertxHttpBuildTimeConfig buildTimeConfig,
             BuildProducer<SecurityInformationBuildItem> securityInformationProducer) {
-        if (!buildTimeConfig.auth.form.enabled && buildTimeConfig.auth.basic.orElse(false)) {
+        if (!buildTimeConfig.auth().form().enabled() && buildTimeConfig.auth().basic().orElse(false)) {
             securityInformationProducer.produce(SecurityInformationBuildItem.BASIC());
         }
 
@@ -262,12 +266,12 @@ public class HttpSecurityProcessor {
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     void createHttpAuthenticationHandler(HttpSecurityRecorder recorder, Capabilities capabilities,
-            HttpBuildTimeConfig buildTimeConfig,
+            VertxHttpBuildTimeConfig buildTimeConfig,
             BuildProducer<HttpAuthenticationHandlerBuildItem> authenticationHandlerProducer) {
         if (capabilities.isPresent(Capability.SECURITY)) {
             authenticationHandlerProducer.produce(
                     new HttpAuthenticationHandlerBuildItem(
-                            recorder.authenticationMechanismHandler(buildTimeConfig.auth.proactive)));
+                            recorder.authenticationMechanismHandler(buildTimeConfig.auth().proactive())));
         }
     }
 
@@ -275,7 +279,7 @@ public class HttpSecurityProcessor {
     @BuildStep
     @Consume(BeanContainerBuildItem.class)
     void initializeAuthenticationHandler(Optional<HttpAuthenticationHandlerBuildItem> authenticationHandler,
-            HttpSecurityRecorder recorder, HttpConfiguration httpConfig) {
+            HttpSecurityRecorder recorder, VertxHttpConfig httpConfig) {
         if (authenticationHandler.isPresent()) {
             recorder.initializeHttpAuthenticatorHandler(authenticationHandler.get().handler, httpConfig);
         }
@@ -294,7 +298,7 @@ public class HttpSecurityProcessor {
 
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
-    void registerAuthMechanismSelectionInterceptor(Capabilities capabilities, HttpBuildTimeConfig buildTimeConfig,
+    void registerAuthMechanismSelectionInterceptor(Capabilities capabilities, VertxHttpBuildTimeConfig buildTimeConfig,
             BuildProducer<EagerSecurityInterceptorBindingBuildItem> bindingProducer, HttpSecurityRecorder recorder,
             BuildProducer<AdditionalSecuredMethodsBuildItem> additionalSecuredMethodsProducer,
             List<HttpAuthMechanismAnnotationBuildItem> additionalHttpAuthMechAnnotations,
@@ -595,9 +599,10 @@ public class HttpSecurityProcessor {
                 .filter(mi -> !HttpSecurityUtils.hasSecurityAnnotation(mi));
     }
 
-    private static void validateAuthMechanismAnnotationUsage(Capabilities capabilities, HttpBuildTimeConfig buildTimeConfig,
+    private static void validateAuthMechanismAnnotationUsage(Capabilities capabilities,
+            VertxHttpBuildTimeConfig buildTimeConfig,
             DotName[] annotationNames) {
-        if (buildTimeConfig.auth.proactive
+        if (buildTimeConfig.auth().proactive()
                 || (!capabilities.isPresent(Capability.RESTEASY_REACTIVE) && !capabilities.isPresent(Capability.RESTEASY))) {
             throw new ConfigurationException("Annotations '" + Arrays.toString(annotationNames) + "' can only be used when"
                     + " proactive authentication is disabled and either RESTEasy Reactive or RESTEasy Classic"
@@ -605,8 +610,8 @@ public class HttpSecurityProcessor {
         }
     }
 
-    private static boolean isMtlsClientAuthenticationEnabled(HttpBuildTimeConfig buildTimeConfig) {
-        return !ClientAuth.NONE.equals(buildTimeConfig.tlsClientAuth);
+    private static boolean isMtlsClientAuthenticationEnabled(VertxHttpBuildTimeConfig buildTimeConfig) {
+        return !ClientAuth.NONE.equals(buildTimeConfig.tlsClientAuth());
     }
 
     private static Set<MethodInfo> collectClassMethodsWithoutRbacAnnotation(Collection<ClassInfo> classes) {
@@ -729,8 +734,9 @@ public class HttpSecurityProcessor {
     static class IsApplicationBasicAuthRequired implements BooleanSupplier {
         private final boolean required;
 
-        public IsApplicationBasicAuthRequired(HttpBuildTimeConfig httpBuildTimeConfig,
-                ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig) {
+        public IsApplicationBasicAuthRequired(
+                VertxHttpBuildTimeConfig httpBuildTimeConfig,
+                ManagementBuildTimeConfig managementInterfaceBuildTimeConfig) {
             required = applicationBasicAuthRequired(httpBuildTimeConfig, managementInterfaceBuildTimeConfig);
         }
 

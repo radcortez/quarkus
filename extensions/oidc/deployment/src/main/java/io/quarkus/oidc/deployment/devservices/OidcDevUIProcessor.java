@@ -30,7 +30,7 @@ import io.quarkus.oidc.runtime.devui.OidcDevUiRecorder;
 import io.quarkus.oidc.runtime.providers.KnownOidcProviders;
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
-import io.quarkus.vertx.http.runtime.HttpConfiguration;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
@@ -62,7 +62,7 @@ public class OidcDevUIProcessor extends AbstractDevUIProcessor {
     @Consume(RuntimeConfigSetupCompleteBuildItem.class)
     void prepareOidcDevConsole(CuratedApplicationShutdownBuildItem closeBuildItem,
             Capabilities capabilities,
-            HttpConfiguration httpConfiguration,
+            VertxHttpConfig httpConfiguration,
             BeanContainerBuildItem beanContainer,
             NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem,
             BuildProducer<CardPageBuildItem> cardPageProducer,

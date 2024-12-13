@@ -24,7 +24,7 @@ import io.quarkus.oidc.deployment.devservices.AbstractDevUIProcessor;
 import io.quarkus.oidc.runtime.devui.OidcDevJsonRpcService;
 import io.quarkus.oidc.runtime.devui.OidcDevUiRecorder;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
-import io.quarkus.vertx.http.runtime.HttpConfiguration;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 
 public class KeycloakDevUIProcessor extends AbstractDevUIProcessor {
 
@@ -35,7 +35,7 @@ public class KeycloakDevUIProcessor extends AbstractDevUIProcessor {
     @Consume(RuntimeConfigSetupCompleteBuildItem.class)
     void produceProviderComponent(Optional<KeycloakDevServicesConfigBuildItem> configProps,
             BuildProducer<KeycloakAdminPageBuildItem> keycloakAdminPageProducer,
-            HttpConfiguration httpConfiguration,
+            VertxHttpConfig httpConfiguration,
             OidcDevUiRecorder recorder,
             NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem,
             BeanContainerBuildItem beanContainer,

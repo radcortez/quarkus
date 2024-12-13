@@ -72,7 +72,7 @@ import io.quarkus.security.ForbiddenException;
 import io.quarkus.security.UnauthorizedException;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
-import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.VertxHttpBuildTimeConfig;
 import io.quarkus.vertx.http.runtime.devmode.ResourceNotFoundData;
 import io.quarkus.vertx.http.runtime.devmode.RouteDescription;
 import io.quarkus.vertx.http.runtime.devmode.RouteMethodDescription;
@@ -109,7 +109,7 @@ public class ResteasyReactiveRecorder extends ResteasyReactiveCommonRecorder imp
 
     public RuntimeValue<Deployment> createDeployment(String applicationPath, DeploymentInfo info,
             BeanContainer beanContainer,
-            ShutdownContext shutdownContext, HttpBuildTimeConfig vertxConfig,
+            ShutdownContext shutdownContext, VertxHttpBuildTimeConfig vertxConfig,
             RequestContextFactory contextFactory,
             BeanFactory<ResteasyReactiveInitialiser> initClassFactory,
             LaunchMode launchMode,
@@ -154,7 +154,7 @@ public class ResteasyReactiveRecorder extends ResteasyReactiveCommonRecorder imp
         RuntimeDeploymentManager runtimeDeploymentManager = new RuntimeDeploymentManager(info, EXECUTOR_SUPPLIER,
                 VTHREAD_EXECUTOR_SUPPLIER,
                 closeTaskHandler, contextFactory, new ArcThreadSetupAction(beanContainer.requestContext()),
-                vertxConfig.rootPath);
+                vertxConfig.rootPath());
         Deployment deployment = runtimeDeploymentManager.deploy();
         DisabledRestEndpoints.set(deployment.getDisabledEndpoints());
         initClassFactory.createInstance().getInstance().init(deployment);

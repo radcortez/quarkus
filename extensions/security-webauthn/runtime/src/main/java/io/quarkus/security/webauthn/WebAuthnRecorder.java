@@ -10,7 +10,7 @@ import org.jboss.logging.Logger;
 import io.quarkus.arc.runtime.BeanContainer;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
-import io.quarkus.vertx.http.runtime.HttpConfiguration;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 import io.quarkus.vertx.http.runtime.security.PersistentLoginManager;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -20,13 +20,13 @@ public class WebAuthnRecorder {
 
     private static final Logger log = Logger.getLogger(WebAuthnRecorder.class);
 
-    final RuntimeValue<HttpConfiguration> httpConfiguration;
+    final RuntimeValue<VertxHttpConfig> httpConfiguration;
     final RuntimeValue<WebAuthnRunTimeConfig> config;
 
     //the temp encryption key, persistent across dev mode restarts
     static volatile String encryptionKey;
 
-    public WebAuthnRecorder(RuntimeValue<HttpConfiguration> httpConfiguration, RuntimeValue<WebAuthnRunTimeConfig> config) {
+    public WebAuthnRecorder(RuntimeValue<VertxHttpConfig> httpConfiguration, RuntimeValue<WebAuthnRunTimeConfig> config) {
         this.httpConfiguration = httpConfiguration;
         this.config = config;
     }
@@ -59,7 +59,7 @@ public class WebAuthnRecorder {
             @Override
             public WebAuthnAuthenticationMechanism get() {
                 String key;
-                if (!httpConfiguration.getValue().encryptionKey.isPresent()) {
+                if (!httpConfiguration.getValue().encryptionKey().isPresent()) {
                     if (encryptionKey != null) {
                         //persist across dev mode restarts
                         key = encryptionKey;
@@ -72,7 +72,7 @@ public class WebAuthnRecorder {
                                         + key);
                     }
                 } else {
-                    key = httpConfiguration.getValue().encryptionKey.get();
+                    key = httpConfiguration.getValue().encryptionKey().get();
                 }
                 WebAuthnRunTimeConfig config = WebAuthnRecorder.this.config.getValue();
                 PersistentLoginManager loginManager = new PersistentLoginManager(key, config.cookieName(),

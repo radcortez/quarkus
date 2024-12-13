@@ -1,13 +1,16 @@
 package io.quarkus.vertx.http.deployment;
 
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.runtime.LaunchMode;
-import io.quarkus.vertx.http.runtime.management.ManagementInterfaceBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.management.ManagementAuthConfig;
+import io.quarkus.vertx.http.runtime.management.ManagementBuildTimeConfig;
+import io.vertx.core.http.ClientAuth;
 
 public class NonApplicationRootPathBuildItemTest {
 
@@ -108,15 +111,13 @@ public class NonApplicationRootPathBuildItemTest {
 
     @Test
     void testResolveManagementPathWithRelativeRootPath() {
-        ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfig();
-        managementInterfaceBuildTimeConfig.enabled = true;
-        managementInterfaceBuildTimeConfig.rootPath = "management";
-
+        ManagementBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfigImpl(true,
+                "management");
         LaunchModeBuildItem launchModeBuildItem = new LaunchModeBuildItem(LaunchMode.NORMAL, Optional.empty(), false,
                 Optional.empty(), false);
 
         NonApplicationRootPathBuildItem buildItem = new NonApplicationRootPathBuildItem("/", "q",
-                managementInterfaceBuildTimeConfig.rootPath);
+                managementInterfaceBuildTimeConfig.rootPath());
         Assertions.assertEquals("/management/", buildItem.getManagementRootPath());
         Assertions.assertEquals("http://localhost:9000/management/foo",
                 buildItem.resolveManagementPath("foo", managementInterfaceBuildTimeConfig, launchModeBuildItem));
@@ -134,15 +135,13 @@ public class NonApplicationRootPathBuildItemTest {
 
     @Test
     void testResolveManagementPathWithRelativeRootPathInTestMode() {
-        ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfig();
-        managementInterfaceBuildTimeConfig.enabled = true;
-        managementInterfaceBuildTimeConfig.rootPath = "management";
-
+        ManagementBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfigImpl(true,
+                "management");
         LaunchModeBuildItem launchModeBuildItem = new LaunchModeBuildItem(LaunchMode.NORMAL, Optional.empty(), false,
                 Optional.empty(), true);
 
         NonApplicationRootPathBuildItem buildItem = new NonApplicationRootPathBuildItem("/", "q",
-                managementInterfaceBuildTimeConfig.rootPath);
+                managementInterfaceBuildTimeConfig.rootPath());
         Assertions.assertEquals("/management/", buildItem.getManagementRootPath());
         Assertions.assertEquals("http://localhost:9001/management/foo",
                 buildItem.resolveManagementPath("foo", managementInterfaceBuildTimeConfig, launchModeBuildItem));
@@ -160,10 +159,8 @@ public class NonApplicationRootPathBuildItemTest {
 
     @Test
     void testResolveManagementPathWithRelativeRootPathAndWithManagementDisabled() {
-        ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfig();
-        managementInterfaceBuildTimeConfig.enabled = false;
-        managementInterfaceBuildTimeConfig.rootPath = "management";
-
+        ManagementBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfigImpl(
+                false, "management");
         LaunchModeBuildItem launchModeBuildItem = new LaunchModeBuildItem(LaunchMode.NORMAL, Optional.empty(), false,
                 Optional.empty(), false);
 
@@ -186,15 +183,13 @@ public class NonApplicationRootPathBuildItemTest {
 
     @Test
     void testResolveManagementPathWithAbsoluteRootPath() {
-        ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfig();
-        managementInterfaceBuildTimeConfig.enabled = true;
-        managementInterfaceBuildTimeConfig.rootPath = "/management";
-
+        ManagementBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfigImpl(true,
+                "/management");
         LaunchModeBuildItem launchModeBuildItem = new LaunchModeBuildItem(LaunchMode.NORMAL, Optional.empty(), false,
                 Optional.empty(), false);
 
         NonApplicationRootPathBuildItem buildItem = new NonApplicationRootPathBuildItem("/", "/q",
-                managementInterfaceBuildTimeConfig.rootPath);
+                managementInterfaceBuildTimeConfig.rootPath());
         Assertions.assertEquals("/management/", buildItem.getManagementRootPath());
         Assertions.assertEquals("http://localhost:9000/management/foo",
                 buildItem.resolveManagementPath("foo", managementInterfaceBuildTimeConfig, launchModeBuildItem));
@@ -212,15 +207,13 @@ public class NonApplicationRootPathBuildItemTest {
 
     @Test
     void testResolveManagementPathWithEmptyRootPath() {
-        ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfig();
-        managementInterfaceBuildTimeConfig.enabled = true;
-        managementInterfaceBuildTimeConfig.rootPath = "";
-
+        ManagementBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfigImpl(true,
+                "");
         LaunchModeBuildItem launchModeBuildItem = new LaunchModeBuildItem(LaunchMode.NORMAL, Optional.empty(), false,
                 Optional.empty(), false);
 
         NonApplicationRootPathBuildItem buildItem = new NonApplicationRootPathBuildItem("/", "/q",
-                managementInterfaceBuildTimeConfig.rootPath);
+                managementInterfaceBuildTimeConfig.rootPath());
         Assertions.assertEquals("/", buildItem.getManagementRootPath());
         Assertions.assertEquals("http://localhost:9000/foo",
                 buildItem.resolveManagementPath("foo", managementInterfaceBuildTimeConfig, launchModeBuildItem));
@@ -238,18 +231,61 @@ public class NonApplicationRootPathBuildItemTest {
 
     @Test
     void testResolveManagementPathWithWithWildcards() {
-        ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfig();
-        managementInterfaceBuildTimeConfig.enabled = true;
-        managementInterfaceBuildTimeConfig.rootPath = "/management";
-
+        ManagementBuildTimeConfig managementInterfaceBuildTimeConfig = new ManagementInterfaceBuildTimeConfigImpl(true,
+                "/management");
         LaunchModeBuildItem launchModeBuildItem = new LaunchModeBuildItem(LaunchMode.NORMAL, Optional.empty(), false,
                 Optional.empty(), false);
 
         NonApplicationRootPathBuildItem buildItem = new NonApplicationRootPathBuildItem("/", "/q",
-                managementInterfaceBuildTimeConfig.rootPath);
+                managementInterfaceBuildTimeConfig.rootPath());
         Assertions.assertEquals("http://localhost:9000/management/foo/*",
                 buildItem.resolveManagementPath("foo/*", managementInterfaceBuildTimeConfig, launchModeBuildItem));
         Assertions.assertEquals("http://localhost:9000/foo/*",
                 buildItem.resolveManagementPath("/foo/*", managementInterfaceBuildTimeConfig, launchModeBuildItem));
+    }
+
+    private static final class ManagementInterfaceBuildTimeConfigImpl implements ManagementBuildTimeConfig {
+        private final boolean enabled;
+        private final String rootPath;
+
+        public ManagementInterfaceBuildTimeConfigImpl(final boolean enabled, final String rootPath) {
+            this.enabled = enabled;
+            this.rootPath = rootPath;
+        }
+
+        @Override
+        public boolean enabled() {
+            return enabled;
+        }
+
+        @Override
+        public ManagementAuthConfig auth() {
+            return null;
+        }
+
+        @Override
+        public ClientAuth tlsClientAuth() {
+            return null;
+        }
+
+        @Override
+        public String rootPath() {
+            return rootPath;
+        }
+
+        @Override
+        public boolean enableCompression() {
+            return false;
+        }
+
+        @Override
+        public boolean enableDecompression() {
+            return false;
+        }
+
+        @Override
+        public OptionalInt compressionLevel() {
+            return OptionalInt.empty();
+        }
     }
 }

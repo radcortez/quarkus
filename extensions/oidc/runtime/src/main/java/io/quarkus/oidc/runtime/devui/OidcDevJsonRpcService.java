@@ -7,14 +7,14 @@ import jakarta.annotation.PreDestroy;
 
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import io.quarkus.vertx.http.runtime.HttpConfiguration;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 import io.smallrye.common.annotation.NonBlocking;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Vertx;
 
 public class OidcDevJsonRpcService {
     private OidcDevUiRpcSvcPropertiesBean props;
-    private HttpConfiguration httpConfiguration;
+    private VertxHttpConfig httpConfiguration;
 
     private Vertx vertx;
 
@@ -31,7 +31,7 @@ public class OidcDevJsonRpcService {
     @NonBlocking
     public OidcDevUiRuntimePropertiesDTO getProperties() {
         return new OidcDevUiRuntimePropertiesDTO(props.getAuthorizationUrl(), props.getTokenUrl(), props.getLogoutUrl(),
-                ConfigProvider.getConfig(), httpConfiguration.port,
+                ConfigProvider.getConfig(), httpConfiguration.port(),
                 props.getOidcProviderName(), props.getOidcApplicationType(), props.getOidcGrantType(),
                 props.isIntrospectionIsAvailable(), props.getKeycloakAdminUrl(),
                 props.getKeycloakRealms(), props.isSwaggerIsAvailable(), props.isGraphqlIsAvailable(), props.getSwaggerUiPath(),
@@ -63,7 +63,7 @@ public class OidcDevJsonRpcService {
                 props.getWebClientTimeout(), props.getClientCredGrantOptions());
     }
 
-    public void hydrate(OidcDevUiRpcSvcPropertiesBean properties, HttpConfiguration httpConfiguration) {
+    public void hydrate(OidcDevUiRpcSvcPropertiesBean properties, VertxHttpConfig httpConfiguration) {
         this.props = properties;
         this.httpConfiguration = httpConfiguration;
     }

@@ -52,7 +52,7 @@ class QuarkusErrorHandlerTest {
     @Test
     public void json_content_type_hint_should_be_respected_if_not_accepted() {
         QuarkusErrorHandler errorHandler = new QuarkusErrorHandler(false, false,
-                Optional.of(HttpConfiguration.PayloadHint.JSON));
+                Optional.of(VertxHttpConfig.PayloadHint.JSON));
         Mockito.when(routingContext.failure()).thenReturn(testError);
         Mockito.when(routingContext.parsedHeaders().findBestUserAcceptedIn(any(), any()))
                 .thenReturn(new ParsableMIMEValue("application/foo+json").forceParse());
@@ -64,7 +64,7 @@ class QuarkusErrorHandlerTest {
     @Test
     public void json_content_type_hint_should_be_ignored_if_accepted() {
         QuarkusErrorHandler errorHandler = new QuarkusErrorHandler(false, false,
-                Optional.of(HttpConfiguration.PayloadHint.JSON));
+                Optional.of(VertxHttpConfig.PayloadHint.JSON));
         Mockito.when(routingContext.failure()).thenReturn(testError);
         Mockito.when(routingContext.parsedHeaders().findBestUserAcceptedIn(any(), any()))
                 .thenReturn(new ParsableMIMEValue("text/html").forceParse());
@@ -87,7 +87,7 @@ class QuarkusErrorHandlerTest {
     @Test
     public void html_content_type_hint_should_be_respected_if_not_accepted() {
         QuarkusErrorHandler errorHandler = new QuarkusErrorHandler(false, false,
-                Optional.of(HttpConfiguration.PayloadHint.HTML));
+                Optional.of(VertxHttpConfig.PayloadHint.HTML));
         Mockito.when(routingContext.failure()).thenReturn(testError);
         Mockito.when(routingContext.parsedHeaders().findBestUserAcceptedIn(any(), any()))
                 .thenReturn(new ParsableMIMEValue("application/foo+json").forceParse());
@@ -98,7 +98,7 @@ class QuarkusErrorHandlerTest {
     @Test
     public void html_content_type_hint_should_be_ignored_if_accepted() {
         QuarkusErrorHandler errorHandler = new QuarkusErrorHandler(false, false,
-                Optional.of(HttpConfiguration.PayloadHint.HTML));
+                Optional.of(VertxHttpConfig.PayloadHint.HTML));
         Mockito.when(routingContext.failure()).thenReturn(testError);
         Mockito.when(routingContext.parsedHeaders().findBestUserAcceptedIn(any(), any()))
                 .thenReturn(new ParsableMIMEValue("application/json").forceParse());

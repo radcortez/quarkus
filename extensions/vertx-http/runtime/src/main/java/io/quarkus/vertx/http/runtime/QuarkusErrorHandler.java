@@ -52,18 +52,18 @@ public class QuarkusErrorHandler implements Handler<RoutingContext> {
 
     private final boolean showStack;
     private final boolean decorateStack;
-    private final Optional<HttpConfiguration.PayloadHint> contentTypeDefault;
+    private final Optional<VertxHttpConfig.PayloadHint> contentTypeDefault;
     private final List<ErrorPageAction> actions;
     private final List<String> knowClasses;
     private final String srcMainJava;
 
     public QuarkusErrorHandler(boolean showStack, boolean decorateStack,
-            Optional<HttpConfiguration.PayloadHint> contentTypeDefault) {
+            Optional<VertxHttpConfig.PayloadHint> contentTypeDefault) {
         this(showStack, decorateStack, contentTypeDefault, null, List.of(), List.of());
     }
 
     public QuarkusErrorHandler(boolean showStack, boolean decorateStack,
-            Optional<HttpConfiguration.PayloadHint> contentTypeDefault,
+            Optional<VertxHttpConfig.PayloadHint> contentTypeDefault,
             String srcMainJava,
             List<String> knowClasses,
             List<ErrorPageAction> actions) {

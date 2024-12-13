@@ -89,7 +89,7 @@ import io.quarkus.vertx.core.deployment.CoreVertxBuildItem;
 import io.quarkus.vertx.http.deployment.EagerSecurityInterceptorBindingBuildItem;
 import io.quarkus.vertx.http.deployment.HttpAuthMechanismAnnotationBuildItem;
 import io.quarkus.vertx.http.deployment.SecurityInformationBuildItem;
-import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.VertxHttpBuildTimeConfig;
 import io.smallrye.jwt.auth.cdi.ClaimValueProducer;
 import io.smallrye.jwt.auth.cdi.CommonJwtProducer;
 import io.smallrye.jwt.auth.cdi.JsonValueProducer;
@@ -330,11 +330,11 @@ public class OidcBuildStep {
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     public void registerTenantResolverInterceptor(Capabilities capabilities, OidcRecorder recorder,
-            HttpBuildTimeConfig buildTimeConfig,
+            VertxHttpBuildTimeConfig buildTimeConfig,
             CombinedIndexBuildItem combinedIndexBuildItem,
             BuildProducer<EagerSecurityInterceptorBindingBuildItem> bindingProducer,
             BuildProducer<SystemPropertyBuildItem> systemPropertyProducer) {
-        if (!buildTimeConfig.auth.proactive
+        if (!buildTimeConfig.auth().proactive()
                 && (capabilities.isPresent(Capability.RESTEASY_REACTIVE) || capabilities.isPresent(Capability.RESTEASY))) {
             boolean foundTenantResolver = combinedIndexBuildItem
                     .getIndex()

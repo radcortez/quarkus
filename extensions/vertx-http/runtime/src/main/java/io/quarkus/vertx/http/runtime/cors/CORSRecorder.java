@@ -1,21 +1,21 @@
 package io.quarkus.vertx.http.runtime.cors;
 
 import io.quarkus.runtime.annotations.Recorder;
-import io.quarkus.vertx.http.runtime.HttpConfiguration;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 
 @Recorder
 public class CORSRecorder {
-    final HttpConfiguration configuration;
+    final VertxHttpConfig configuration;
 
-    public CORSRecorder(HttpConfiguration configuration) {
+    public CORSRecorder(VertxHttpConfig configuration) {
         this.configuration = configuration;
     }
 
     public Handler<RoutingContext> corsHandler() {
-        if (configuration.corsEnabled) {
-            return new CORSFilter(configuration.cors);
+        if (configuration.corsEnabled()) {
+            return new CORSFilter(configuration.cors());
         }
         return null;
     }

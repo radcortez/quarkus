@@ -7,13 +7,13 @@ import java.util.Map;
 import io.quarkus.arc.runtime.BeanContainer;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
-import io.quarkus.vertx.http.runtime.HttpConfiguration;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 
 @Recorder
 public class OidcDevUiRecorder {
 
     public void createJsonRPCService(BeanContainer beanContainer,
-            RuntimeValue<OidcDevUiRpcSvcPropertiesBean> oidcDevUiRpcSvcPropertiesBean, HttpConfiguration httpConfiguration) {
+            RuntimeValue<OidcDevUiRpcSvcPropertiesBean> oidcDevUiRpcSvcPropertiesBean, VertxHttpConfig httpConfiguration) {
         OidcDevJsonRpcService jsonRpcService = beanContainer.beanInstance(OidcDevJsonRpcService.class);
         jsonRpcService.hydrate(oidcDevUiRpcSvcPropertiesBean.getValue(), httpConfiguration);
     }

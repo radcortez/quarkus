@@ -14,7 +14,7 @@ import io.quarkus.oidc.runtime.devui.OidcDevUiRecorder;
 import io.quarkus.oidc.runtime.devui.OidcDevUiRpcSvcPropertiesBean;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
-import io.quarkus.vertx.http.runtime.HttpConfiguration;
+import io.quarkus.vertx.http.runtime.VertxHttpConfig;
 
 public abstract class AbstractDevUIProcessor {
     protected static final String CONFIG_PREFIX = "quarkus.oidc.";
@@ -38,7 +38,7 @@ public abstract class AbstractDevUIProcessor {
             Map<String, String> keycloakUsers,
             List<String> keycloakRealms,
             boolean alwaysLogoutUserInDevUiOnReload,
-            HttpConfiguration httpConfiguration) {
+            VertxHttpConfig httpConfiguration) {
         final CardPageBuildItem cardPage = new CardPageBuildItem();
 
         // prepare provider component

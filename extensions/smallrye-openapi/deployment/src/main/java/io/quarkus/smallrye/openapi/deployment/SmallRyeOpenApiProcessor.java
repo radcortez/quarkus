@@ -117,7 +117,7 @@ import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.SecurityInformationBuildItem;
 import io.quarkus.vertx.http.deployment.devmode.NotFoundPageDisplayableEndpointBuildItem;
 import io.quarkus.vertx.http.deployment.spi.RouteBuildItem;
-import io.quarkus.vertx.http.runtime.management.ManagementInterfaceBuildTimeConfig;
+import io.quarkus.vertx.http.runtime.management.ManagementBuildTimeConfig;
 import io.smallrye.openapi.api.OpenApiConfig;
 import io.smallrye.openapi.api.OpenApiDocument;
 import io.smallrye.openapi.api.SmallRyeOpenAPI;
@@ -257,7 +257,7 @@ public class SmallRyeOpenApiProcessor {
             ShutdownContextBuildItem shutdownContext,
             SmallRyeOpenApiConfig openApiConfig,
             List<FilterBuildItem> filterBuildItems,
-            ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig) {
+            ManagementBuildTimeConfig managementInterfaceBuildTimeConfig) {
         /*
          * <em>Ugly Hack</em>
          * In dev mode, we pass a classloader to load the up to date OpenAPI document.
@@ -342,11 +342,11 @@ public class SmallRyeOpenApiProcessor {
     private String getManagementRoot(LaunchModeBuildItem launch,
             NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem,
             SmallRyeOpenApiConfig openApiConfig,
-            ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig) {
+            ManagementBuildTimeConfig managementInterfaceBuildTimeConfig) {
         String managementRoot = nonApplicationRootPathBuildItem.resolveManagementPath("/",
                 managementInterfaceBuildTimeConfig, launch, openApiConfig.managementEnabled);
 
-        return managementRoot.split(managementInterfaceBuildTimeConfig.rootPath)[0];
+        return managementRoot.split(managementInterfaceBuildTimeConfig.rootPath())[0];
 
     }
 
@@ -392,7 +392,7 @@ public class SmallRyeOpenApiProcessor {
             OpenApiFilteredIndexViewBuildItem apiFilteredIndexViewBuildItem,
             SmallRyeOpenApiConfig config,
             LaunchModeBuildItem launchModeBuildItem,
-            ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig) {
+            ManagementBuildTimeConfig managementInterfaceBuildTimeConfig) {
 
         // Add a security scheme from config
         if (config.securityScheme.isPresent()) {
@@ -451,10 +451,11 @@ public class SmallRyeOpenApiProcessor {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    private boolean isManagement(ManagementInterfaceBuildTimeConfig managementInterfaceBuildTimeConfig,
+    private boolean isManagement(
+            ManagementBuildTimeConfig managementInterfaceBuildTimeConfig,
             SmallRyeOpenApiConfig smallRyeOpenApiConfig,
             LaunchModeBuildItem launchModeBuildItem) {
-        return managementInterfaceBuildTimeConfig.enabled && smallRyeOpenApiConfig.managementEnabled
+        return managementInterfaceBuildTimeConfig.enabled() && smallRyeOpenApiConfig.managementEnabled
                 && launchModeBuildItem.getLaunchMode().equals(LaunchMode.DEVELOPMENT);
     }
 

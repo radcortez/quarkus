@@ -217,8 +217,8 @@ import io.quarkus.vertx.http.deployment.EagerSecurityInterceptorMethodsBuildItem
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
 import io.quarkus.vertx.http.deployment.HttpSecurityUtils;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
-import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
 import io.quarkus.vertx.http.runtime.RouteConstants;
+import io.quarkus.vertx.http.runtime.VertxHttpBuildTimeConfig;
 import io.quarkus.vertx.http.runtime.security.JaxRsPathMatchingHttpSecurityPolicy;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerRequest;
@@ -1241,7 +1241,7 @@ public class ResteasyReactiveProcessor {
             ResteasyReactiveRecorder recorder,
             RecorderContext recorderContext,
             ShutdownContextBuildItem shutdownContext,
-            HttpBuildTimeConfig vertxConfig,
+            VertxHttpBuildTimeConfig vertxConfig,
             SetupEndpointsResultBuildItem setupEndpointsResult,
             ServerSerialisersBuildItem serverSerialisersBuildItem,
             List<PreExceptionMapperHandlerBuildItem> preExceptionMapperHandlerBuildItems,
@@ -1393,7 +1393,7 @@ public class ResteasyReactiveProcessor {
             final boolean noCustomAuthCompletionExMapper;
             final boolean noCustomAuthFailureExMapper;
             final boolean noCustomAuthRedirectExMapper;
-            if (vertxConfig.auth.proactive) {
+            if (vertxConfig.auth().proactive()) {
                 noCustomAuthCompletionExMapper = notFoundCustomExMapper(AuthenticationCompletionException.class.getName(),
                         AuthenticationCompletionExceptionMapper.class.getName(), exceptionMapping);
                 noCustomAuthFailureExMapper = notFoundCustomExMapper(AuthenticationFailedException.class.getName(),
@@ -1408,7 +1408,7 @@ public class ResteasyReactiveProcessor {
             }
 
             Handler<RoutingContext> failureHandler = recorder.failureHandler(restInitialHandler, noCustomAuthCompletionExMapper,
-                    noCustomAuthFailureExMapper, noCustomAuthRedirectExMapper, vertxConfig.auth.proactive);
+                    noCustomAuthFailureExMapper, noCustomAuthRedirectExMapper, vertxConfig.auth().proactive());
 
             // we add failure handler right before QuarkusErrorHandler
             // so that user can define failure handlers that precede exception mappers
