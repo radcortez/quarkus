@@ -23,6 +23,7 @@ public final class QuarkusConfigFactory extends SmallRyeConfigFactory {
     }
 
     public static void setConfig(SmallRyeConfig config) {
+        System.out.println("set config " + config);
         SmallRyeConfigProviderResolver configProviderResolver = (SmallRyeConfigProviderResolver) SmallRyeConfigProviderResolver
                 .instance();
         // Uninstall previous config
