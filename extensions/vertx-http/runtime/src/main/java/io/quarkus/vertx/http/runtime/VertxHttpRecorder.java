@@ -1360,9 +1360,11 @@ public class VertxHttpRecorder {
                         if (https) {
                             actualHttpsPort = actualPort;
                             validateHttpPorts(actualHttpPort, actualHttpsPort);
+                            QuarkusWebServer.instance().setSecurePort(actualPort);
                         } else {
                             actualHttpPort = actualPort;
                             validateHttpPorts(actualHttpPort, actualHttpsPort);
+                            QuarkusWebServer.instance().setPort(actualPort);
                         }
                         if (actualPort != options.getPort()) {
                             // Override quarkus.http(s)?.(test-)?port
