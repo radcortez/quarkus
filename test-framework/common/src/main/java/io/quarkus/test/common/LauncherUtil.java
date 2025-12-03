@@ -20,7 +20,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.quarkus.test.common.http.TestHTTPResourceManager;
 import io.smallrye.common.os.OS;
 
 public final class LauncherUtil {
@@ -198,19 +197,6 @@ public final class LauncherUtil {
             throw new RuntimeException("Unable to start target quarkus application " + waitTimeSeconds + "s");
         }
         return result;
-    }
-
-    /**
-     * Updates the configuration necessary to make all test systems knowledgeable about the port on which the launched
-     * process is listening
-     */
-    static void updateConfigForPort(Integer effectivePort) {
-        if (effectivePort != null) {
-            System.setProperty("quarkus.http.port", effectivePort.toString()); //set the port as a system property in order to have it applied to Config
-            System.setProperty("quarkus.http.test-port", effectivePort.toString()); // needed for RestAssuredManager
-            System.clearProperty("test.url"); // make sure the old value does not interfere with setting the new one
-            System.setProperty("test.url", TestHTTPResourceManager.getUri());
-        }
     }
 
     static void toStdOut(Path log) {
