@@ -9,7 +9,6 @@ import static io.quarkus.test.junit.IntegrationTestUtil.doProcessTestInstance;
 import static io.quarkus.test.junit.IntegrationTestUtil.ensureNoInjectAnnotationIsUsed;
 import static io.quarkus.test.junit.IntegrationTestUtil.findProfile;
 import static io.quarkus.test.junit.IntegrationTestUtil.getEffectiveArtifactType;
-import static io.quarkus.test.junit.IntegrationTestUtil.getSysPropsToRestore;
 import static io.quarkus.test.junit.IntegrationTestUtil.handleDevServices;
 import static io.quarkus.test.junit.IntegrationTestUtil.readQuarkusArtifactProperties;
 import static io.quarkus.test.junit.IntegrationTestUtil.startLauncher;
@@ -47,6 +46,7 @@ import io.quarkus.deployment.dev.testing.TestConfig;
 import io.quarkus.runtime.logging.LogRuntimeConfig;
 import io.quarkus.runtime.test.TestHttpEndpointProvider;
 import io.quarkus.test.common.ArtifactLauncher;
+import io.quarkus.test.common.ArtifactLauncher.InitContext.DevServicesLaunchResult;
 import io.quarkus.test.common.ListeningAddress;
 import io.quarkus.test.common.RestAssuredStateManager;
 import io.quarkus.test.common.RunCommandLauncher;
@@ -72,8 +72,6 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
     private static Throwable firstException; //if this is set then it will be thrown from the very first test that is run, the rest are aborted
 
     private static Class<?> currentJUnitTestClass;
-
-    private static Map<String, String> devServicesProps;
 
     @Override
     public void afterTestExecution(ExtensionContext context) throws Exception {
@@ -207,17 +205,10 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
         try {
             Class<?> requiredTestClass = context.getRequiredTestClass();
 
-            Map<String, String> sysPropRestore = getSysPropsToRestore();
-
             TestProfileAndProperties testProfileAndProperties = determineTestProfileAndProperties(profile);
             // prepare dev services after profile and properties have been determined
-            ArtifactLauncher.InitContext.DevServicesLaunchResult devServicesLaunchResult = handleDevServices(context,
-                    isDockerLaunch, testProfileAndProperties);
-
-            devServicesProps = devServicesLaunchResult.properties();
-            for (String devServicesProp : devServicesProps.keySet()) {
-                sysPropRestore.put(devServicesProp, null); // used to signal that the property needs to be cleared
-            }
+            DevServicesLaunchResult devServicesLaunchResult = handleDevServices(context, isDockerLaunch,
+                    testProfileAndProperties);
 
             testResourceManager = new TestResourceManager(
                     requiredTestClass,
@@ -225,7 +216,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
                     copyEntriesFromProfile(testProfileAndProperties.testProfile().orElse(null),
                             context.getRequiredTestClass().getClassLoader()),
                     testProfileAndProperties.isDisabledGlobalTestResources(),
-                    devServicesProps,
+                    devServicesLaunchResult.properties(),
                     Optional.ofNullable(devServicesLaunchResult.networkId()));
             testResourceManager.init(testProfileAndProperties.testProfileClassName().orElse(null));
 
@@ -234,7 +225,6 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
             }
 
             Map<String, String> additionalProperties = new HashMap<>();
-
             // propagate Quarkus properties set from the build tool
             Properties existingSysProps = System.getProperties();
             for (String name : existingSysProps.stringPropertyNames()) {
@@ -245,41 +235,9 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
                     additionalProperties.put(name, existingSysProps.getProperty(name));
                 }
             }
-
             additionalProperties.putAll(testProfileAndProperties.properties());
-            //we also make the dev services config accessible from the test itself
-            Map<String, String> resourceManagerProps = new HashMap<>(QuarkusIntegrationTestExtension.devServicesProps);
-            // Allow override of dev services props by integration test extensions
-            resourceManagerProps.putAll(testResourceManager.start());
-            Map<String, String> old = new HashMap<>();
-            for (Map.Entry<String, String> i : resourceManagerProps.entrySet()) {
-                old.put(i.getKey(), System.getProperty(i.getKey()));
-                if (i.getValue() == null) {
-                    System.clearProperty(i.getKey());
-                } else {
-                    System.setProperty(i.getKey(), i.getValue());
-                }
-            }
-            context.getStore(ExtensionContext.Namespace.GLOBAL).put(
-                    QuarkusIntegrationTestExtension.class.getName() + ".systemProps",
-                    new AutoCloseable() {
-                        @Override
-                        public void close() throws Exception {
-                            for (Map.Entry<String, String> i : old.entrySet()) {
-                                old.put(i.getKey(), System.getProperty(i.getKey()));
-                                if (i.getValue() == null) {
-                                    System.clearProperty(i.getKey());
-                                } else {
-                                    System.setProperty(i.getKey(), i.getValue());
-                                }
-                                // recalculate the property names that may have changed with the restore
-                                ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
-                            }
-                        }
-                    });
-            additionalProperties.putAll(resourceManagerProps);
-            // recalculate the property names that may have changed with testProfileAndProperties.properties
-            ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
+            additionalProperties.putAll(devServicesLaunchResult.properties());
+            additionalProperties.putAll(testResourceManager.start());
 
             ArtifactLauncher<?> launcher;
             String testHost = System.getProperty("quarkus.http.test-host");
@@ -314,7 +272,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
             Closeable resource = new IntegrationTestExtensionStateResource(launcher,
                     devServicesLaunchResult.getCuratedApplication());
             IntegrationTestExtensionState state = new IntegrationTestExtensionState(testResourceManager, resource,
-                    AbstractTestWithCallbacksExtension::clearCallbacks, listeningAddress, sysPropRestore);
+                    AbstractTestWithCallbacksExtension::clearCallbacks, listeningAddress);
             testHttpEndpointProviders = TestHttpEndpointProvider.load();
 
             return state;
@@ -376,10 +334,10 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
         private final Properties quarkusArtifactProperties;
         private final ExtensionContext context;
         private final Class<?> requiredTestClass;
-        private final ArtifactLauncher.InitContext.DevServicesLaunchResult devServicesLaunchResult;
+        private final DevServicesLaunchResult devServicesLaunchResult;
 
         DefaultArtifactLauncherCreateContext(Properties quarkusArtifactProperties, ExtensionContext context,
-                Class<?> requiredTestClass, ArtifactLauncher.InitContext.DevServicesLaunchResult devServicesLaunchResult) {
+                Class<?> requiredTestClass, DevServicesLaunchResult devServicesLaunchResult) {
             this.quarkusArtifactProperties = quarkusArtifactProperties;
             this.context = context;
             this.requiredTestClass = requiredTestClass;
@@ -402,7 +360,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
         }
 
         @Override
-        public ArtifactLauncher.InitContext.DevServicesLaunchResult devServicesLaunchResult() {
+        public DevServicesLaunchResult devServicesLaunchResult() {
             return devServicesLaunchResult;
         }
     }

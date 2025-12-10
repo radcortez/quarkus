@@ -7,7 +7,6 @@ import static io.quarkus.test.junit.IntegrationTestUtil.determineBuildOutputDire
 import static io.quarkus.test.junit.IntegrationTestUtil.determineTestProfileAndProperties;
 import static io.quarkus.test.junit.IntegrationTestUtil.ensureNoInjectAnnotationIsUsed;
 import static io.quarkus.test.junit.IntegrationTestUtil.getEffectiveArtifactType;
-import static io.quarkus.test.junit.IntegrationTestUtil.getSysPropsToRestore;
 import static io.quarkus.test.junit.IntegrationTestUtil.handleDevServices;
 import static io.quarkus.test.junit.IntegrationTestUtil.readQuarkusArtifactProperties;
 import static io.quarkus.test.junit.TestResourceUtil.TestResourceManagerReflections.copyEntriesFromProfile;
@@ -44,8 +43,6 @@ public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWith
 
     public static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace
             .create("io.quarkus.test.main.integration");
-
-    private static Map<String, String> devServicesProps;
 
     ArtifactLauncher.InitContext.DevServicesLaunchResult devServicesLaunchResult;
     Properties quarkusArtifactProperties;
@@ -105,7 +102,6 @@ public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWith
                 || (isJar(artifactType) && "test-with-native-agent".equals(testConfig.integrationTestProfile()));
 
         devServicesLaunchResult = handleDevServices(extensionContext, isDockerLaunch, testProfileAndProperties);
-        devServicesProps = devServicesLaunchResult.properties();
 
         ExtensionContext root = extensionContext.getRoot();
         root.getStore(NAMESPACE).put("devServicesLaunchResult", devServicesLaunchResult);
@@ -115,11 +111,9 @@ public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWith
         try {
             Class<? extends QuarkusTestProfile> profile = IntegrationTestUtil.findProfile(context.getRequiredTestClass());
             TestResourceManager testResourceManager = null;
-            Map<String, String> old = new HashMap<>();
             try {
                 Class<?> requiredTestClass = context.getRequiredTestClass();
 
-                Map<String, String> sysPropRestore = getSysPropsToRestore();
                 TestProfileAndProperties testProfileAndProperties = determineTestProfileAndProperties(profile);
                 // prepare dev services after profile and properties have been determined
                 if (quarkusArtifactProperties == null) {
@@ -136,7 +130,6 @@ public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWith
                 testResourceManager.init(testProfileAndProperties.testProfileClassName().orElse(null));
 
                 Map<String, String> additionalProperties = new HashMap<>();
-
                 // propagate Quarkus properties set from the build tool
                 Properties existingSysProps = System.getProperties();
                 for (String name : existingSysProps.stringPropertyNames()) {
@@ -147,23 +140,9 @@ public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWith
                         additionalProperties.put(name, existingSysProps.getProperty(name));
                     }
                 }
-
                 additionalProperties.putAll(testProfileAndProperties.properties());
-                //also make the dev services props accessible from the test
-                Map<String, String> resourceManagerProps = new HashMap<>(QuarkusMainIntegrationTestExtension.devServicesProps);
-                // Allow override of dev services props by integration test extensions
-                resourceManagerProps.putAll(testResourceManager.start());
-                for (Map.Entry<String, String> i : resourceManagerProps.entrySet()) {
-                    old.put(i.getKey(), System.getProperty(i.getKey()));
-                    if (i.getValue() == null) {
-                        System.clearProperty(i.getKey());
-                    } else {
-                        System.setProperty(i.getKey(), i.getValue());
-                    }
-                }
-                additionalProperties.putAll(resourceManagerProps);
-                // recalculate the property names that may have changed with testProfileAndProperties.properties
-                ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
+                additionalProperties.putAll(devServicesLaunchResult.properties());
+                additionalProperties.putAll(testResourceManager.start());
 
                 testResourceManager.inject(context.getRequiredTestInstance());
 
@@ -190,15 +169,6 @@ public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWith
                 return launcher.runToCompletion(args);
 
             } finally {
-                for (Map.Entry<String, String> i : old.entrySet()) {
-                    if (i.getValue() == null) {
-                        System.clearProperty(i.getKey());
-                    } else {
-                        System.setProperty(i.getKey(), i.getValue());
-                    }
-                }
-                // recalculate the property names that may have changed with the restore
-                ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
                 try {
                     if (testResourceManager != null) {
                         testResourceManager.close();

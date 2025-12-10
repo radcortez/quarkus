@@ -118,12 +118,6 @@ public final class IntegrationTestUtil {
         ((TestResourceManager) state.testResourceManager).inject(testInstance);
     }
 
-    static Map<String, String> getSysPropsToRestore() {
-        Map<String, String> sysPropRestore = new HashMap<>();
-        sysPropRestore.put(LaunchMode.DEVELOPMENT.getProfileKey(), System.getProperty(LaunchMode.TEST.getProfileKey()));
-        return sysPropRestore;
-    }
-
     static TestProfileAndProperties determineTestProfileAndProperties(Class<? extends QuarkusTestProfile> profile)
             throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         final Map<String, String> properties = new HashMap<>();
@@ -148,8 +142,6 @@ public final class IntegrationTestUtil {
             }
             properties.put("quarkus.config.build-time-mismatch-at-runtime", "fail");
         }
-        // recalculate the property names that may have changed
-        ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
         return new TestProfileAndProperties(testProfile, properties);
     }
 
