@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Nested;
@@ -68,6 +69,7 @@ import io.quarkus.runtime.configuration.DurationConverter;
 import io.quarkus.runtime.test.TestHttpEndpointProvider;
 import io.quarkus.test.TestMethodInvoker;
 import io.quarkus.test.common.GroovyClassValue;
+import io.quarkus.test.common.ListeningAddress;
 import io.quarkus.test.common.RestAssuredStateManager;
 import io.quarkus.test.common.RestorableSystemProperties;
 import io.quarkus.test.common.TestClassIndexer;
@@ -281,7 +283,13 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
                     }
                 }
             };
-            return new ExtensionState(testResourceManager, shutdownTask, AbstractTestWithCallbacksExtension::clearCallbacks);
+
+            // TODO - The Config here is the one coming from Quarkus runtime
+            //  Replace to use RuntimeValues API when available instead of using Config
+            ListeningAddress listeningAddress = new ListeningAddress(
+                    ConfigProvider.getConfig().getOptionalValue("quarkus.http.test-port", int.class).orElse(-1), "http");
+            return new ExtensionState(testResourceManager, shutdownTask, AbstractTestWithCallbacksExtension::clearCallbacks,
+                    Optional.of(listeningAddress));
         } catch (Throwable e) {
             if (!InitialConfigurator.DELAYED_HANDLER.isActivated()) {
                 activateLogging();
@@ -1086,6 +1094,11 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
+        if (QuarkusRuntimeInfoParameterResolver.INSTANCE.supportsParameter(parameterContext, extensionContext)
+                && !isNativeOrIntegrationTest(extensionContext.getRequiredTestClass())) {
+            return true;
+        }
+
         boolean isConstructor = parameterContext.getDeclaringExecutable() instanceof Constructor;
         if (isConstructor) {
             return true;
@@ -1115,6 +1128,11 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
+        if (QuarkusRuntimeInfoParameterResolver.INSTANCE.supportsParameter(parameterContext, extensionContext)
+                && !isNativeOrIntegrationTest(extensionContext.getRequiredTestClass())) {
+            return QuarkusRuntimeInfoParameterResolver.INSTANCE.resolveParameter(parameterContext, extensionContext);
+        }
+
         if ((parameterContext.getDeclaringExecutable() instanceof Method) && (testMethodInvokers != null)) {
             for (Object testMethodInvoker : testMethodInvokers) {
                 if (testMethodInvokerHandlesParamType(testMethodInvoker, parameterContext)) {
@@ -1155,8 +1173,9 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
 
     public static class ExtensionState extends QuarkusTestExtensionState {
 
-        public ExtensionState(Closeable testResourceManager, Closeable resource, Runnable clearCallbacks) {
-            super(testResourceManager, resource, clearCallbacks);
+        public ExtensionState(Closeable testResourceManager, Closeable resource, Runnable clearCallbacks,
+                Optional<ListeningAddress> listeningAddress) {
+            super(testResourceManager, resource, clearCallbacks, listeningAddress);
         }
 
         public ExtensionState(Closeable trm, Closeable resource, Runnable clearCallbacks, Thread shutdownHook) {
