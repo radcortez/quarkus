@@ -38,6 +38,9 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.TestInstancePostProcessor;
 import org.opentest4j.TestAbortedException;
 
@@ -60,7 +63,7 @@ import io.smallrye.config.SmallRyeConfig;
 
 public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithContextExtension
         implements BeforeTestExecutionCallback, AfterTestExecutionCallback, BeforeEachCallback, AfterEachCallback,
-        BeforeAllCallback, AfterAllCallback, TestInstancePostProcessor {
+        BeforeAllCallback, AfterAllCallback, TestInstancePostProcessor, ParameterResolver {
 
     private static final String ENABLED_CALLBACKS_PROPERTY = "quarkus.test.enable-callbacks-for-integration-tests";
 
@@ -340,6 +343,18 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
         if (!failedBoot) {
             doProcessTestInstance(testInstance, context);
         }
+    }
+
+    @Override
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+            throws ParameterResolutionException {
+        return QuarkusRuntimeInfoParameterResolver.INSTANCE.supportsParameter(parameterContext, extensionContext);
+    }
+
+    @Override
+    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+            throws ParameterResolutionException {
+        return QuarkusRuntimeInfoParameterResolver.INSTANCE.resolveParameter(parameterContext, extensionContext);
     }
 
     private void throwBootFailureException() {

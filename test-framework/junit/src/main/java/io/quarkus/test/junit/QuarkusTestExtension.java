@@ -1088,6 +1088,11 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
+        if (QuarkusRuntimeInfoParameterResolver.INSTANCE.supportsParameter(parameterContext, extensionContext)
+                && !isNativeOrIntegrationTest(extensionContext.getRequiredTestClass())) {
+            return true;
+        }
+
         boolean isConstructor = parameterContext.getDeclaringExecutable() instanceof Constructor;
         if (isConstructor) {
             return true;
@@ -1117,6 +1122,11 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
+        if (QuarkusRuntimeInfoParameterResolver.INSTANCE.supportsParameter(parameterContext, extensionContext)
+                && !isNativeOrIntegrationTest(extensionContext.getRequiredTestClass())) {
+            return QuarkusRuntimeInfoParameterResolver.INSTANCE.resolveParameter(parameterContext, extensionContext);
+        }
+
         if ((parameterContext.getDeclaringExecutable() instanceof Method) && (testMethodInvokers != null)) {
             for (Object testMethodInvoker : testMethodInvokers) {
                 if (testMethodInvokerHandlesParamType(testMethodInvoker, parameterContext)) {
