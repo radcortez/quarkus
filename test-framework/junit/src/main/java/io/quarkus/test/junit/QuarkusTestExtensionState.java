@@ -102,6 +102,7 @@ public class QuarkusTestExtensionState implements AutoCloseable {
         Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
+    // TODO - Should ListeningAddress be cloned? Investigate why we need this clone
     public QuarkusTestExtensionState(Closeable testResourceManager, Closeable resource, Runnable clearCallbacks,
             Optional<ListeningAddress> listeningAddress) {
         this.testResourceManager = testResourceManager;

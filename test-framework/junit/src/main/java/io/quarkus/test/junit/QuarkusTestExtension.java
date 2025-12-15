@@ -65,10 +65,13 @@ import io.quarkus.dev.testing.ExceptionReporting;
 import io.quarkus.dev.testing.TracingHandler;
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.QuarkusRuntime;
+import io.quarkus.runtime.QuarkusRuntime.RuntimeKey;
 import io.quarkus.runtime.configuration.DurationConverter;
 import io.quarkus.runtime.test.TestHttpEndpointProvider;
 import io.quarkus.test.TestMethodInvoker;
 import io.quarkus.test.common.GroovyClassValue;
+import io.quarkus.test.common.ListeningAddress;
 import io.quarkus.test.common.RestAssuredStateManager;
 import io.quarkus.test.common.RestorableSystemProperties;
 import io.quarkus.test.common.TestClassIndexer;
@@ -282,7 +285,11 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
                     }
                 }
             };
-            return new ExtensionState(testResourceManager, shutdownTask, AbstractTestWithCallbacksExtension::clearCallbacks);
+
+            int httpPort = QuarkusRuntime.getOrDefault(RuntimeKey.intKey("quarkus.http.test-port"), -1);
+            ListeningAddress listeningAddress = new ListeningAddress(httpPort, "http");
+            return new ExtensionState(testResourceManager, shutdownTask, AbstractTestWithCallbacksExtension::clearCallbacks,
+                    Optional.of(listeningAddress));
         } catch (Throwable e) {
             if (!InitialConfigurator.DELAYED_HANDLER.isActivated()) {
                 activateLogging();
@@ -1167,8 +1174,9 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
 
     public static class ExtensionState extends QuarkusTestExtensionState {
 
-        public ExtensionState(Closeable testResourceManager, Closeable resource, Runnable clearCallbacks) {
-            super(testResourceManager, resource, clearCallbacks);
+        public ExtensionState(Closeable testResourceManager, Closeable resource, Runnable clearCallbacks,
+                Optional<ListeningAddress> listeningAddress) {
+            super(testResourceManager, resource, clearCallbacks, listeningAddress);
         }
 
         public ExtensionState(Closeable trm, Closeable resource, Runnable clearCallbacks, Thread shutdownHook) {
