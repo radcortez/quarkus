@@ -1,5 +1,6 @@
 package io.quarkus.vertx.http;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.inject.Inject;
@@ -19,8 +20,7 @@ public class HttpServerTest {
     @Test
     void ports() {
         assertTrue(webServer.getPort() > 0);
-        // TODO - When we move to Runtime Values these will return -1 or an error
-        //assertEquals(-1, webServer.getSecurePort());
-        //assertEquals(-1, webServer.getManagementPort());
+        assertEquals(-1, webServer.getSecurePort());
+        assertEquals(-1, webServer.getManagementPort());
     }
 }

@@ -61,17 +61,15 @@ import io.quarkus.bootstrap.app.CuratedApplication;
 import io.quarkus.bootstrap.app.StartupAction;
 import io.quarkus.bootstrap.classloading.QuarkusClassLoader;
 import io.quarkus.bootstrap.logging.InitialConfigurator;
+import io.quarkus.bootstrap.runtime.QuarkusRuntime;
 import io.quarkus.dev.testing.ExceptionReporting;
 import io.quarkus.dev.testing.TracingHandler;
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.LaunchMode;
-import io.quarkus.runtime.QuarkusRuntime;
-import io.quarkus.runtime.QuarkusRuntime.RuntimeKey;
 import io.quarkus.runtime.configuration.DurationConverter;
 import io.quarkus.runtime.test.TestHttpEndpointProvider;
 import io.quarkus.test.TestMethodInvoker;
 import io.quarkus.test.common.GroovyClassValue;
-import io.quarkus.test.common.ListeningAddress;
 import io.quarkus.test.common.RestAssuredStateManager;
 import io.quarkus.test.common.RestorableSystemProperties;
 import io.quarkus.test.common.TestClassIndexer;
@@ -286,10 +284,9 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
                 }
             };
 
-            int httpPort = QuarkusRuntime.getOrDefault(RuntimeKey.intKey("quarkus.http.test-port"), -1);
-            ListeningAddress listeningAddress = new ListeningAddress(httpPort, "http");
-            return new ExtensionState(testResourceManager, shutdownTask, AbstractTestWithCallbacksExtension::clearCallbacks,
-                    Optional.of(listeningAddress));
+            QuarkusRuntime quarkusRuntime = runningQuarkusApplication.quarkusRuntime();
+            return new ExtensionState(quarkusRuntime, testResourceManager, shutdownTask,
+                    AbstractTestWithCallbacksExtension::clearCallbacks);
         } catch (Throwable e) {
             if (!InitialConfigurator.DELAYED_HANDLER.isActivated()) {
                 activateLogging();
@@ -1174,9 +1171,9 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
 
     public static class ExtensionState extends QuarkusTestExtensionState {
 
-        public ExtensionState(Closeable testResourceManager, Closeable resource, Runnable clearCallbacks,
-                Optional<ListeningAddress> listeningAddress) {
-            super(testResourceManager, resource, clearCallbacks, listeningAddress);
+        public ExtensionState(QuarkusRuntime quarkusRuntime, Closeable testResourceManager, Closeable resource,
+                Runnable clearCallbacks) {
+            super(quarkusRuntime, testResourceManager, resource, clearCallbacks);
         }
 
         public ExtensionState(Closeable trm, Closeable resource, Runnable clearCallbacks, Thread shutdownHook) {

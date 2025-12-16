@@ -13,6 +13,8 @@ import io.quarkus.deployment.builditem.RuntimeConfigSetupCompleteBuildItem;
 import io.quarkus.gizmo.ClassCreator;
 import io.quarkus.gizmo.ClassOutput;
 import io.quarkus.gizmo.MethodCreator;
+import io.quarkus.gizmo.MethodDescriptor;
+import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.runtime.StartupContext;
 import io.quarkus.runtime.StartupTask;
 
@@ -37,10 +39,17 @@ public class RuntimeConfigSetupBuildStep {
                 .interfaces(StartupTask.class).build()) {
 
             try (MethodCreator method = clazz.getMethodCreator("deploy", void.class, StartupContext.class)) {
-                method.invokeVirtualMethod(ofMethod(StartupContext.class, "setCurrentBuildStepName", void.class, String.class),
-                        method.getMethodParam(0), method.load("RuntimeConfigSetupBuildStep.setupRuntimeConfig"));
+                ResultHandle startupContext = method.getMethodParam(0);
 
-                method.invokeStaticMethod(C_CREATE_RUN_TIME_CONFIG);
+                method.invokeVirtualMethod(ofMethod(StartupContext.class, "setCurrentBuildStepName", void.class, String.class),
+                        startupContext, method.load("RuntimeConfigSetupBuildStep.setupRuntimeConfig"));
+
+                MethodDescriptor getValue = MethodDescriptor.ofMethod(StartupContext.class, "getValue", Object.class,
+                        String.class);
+                ResultHandle quarkusRuntime = method.invokeVirtualMethod(getValue, startupContext,
+                        method.load("io.quarkus.runtime.QuarkusRuntime"));
+
+                method.invokeStaticMethod(C_CREATE_RUN_TIME_CONFIG, quarkusRuntime);
                 method.returnValue(null);
             }
         }

@@ -9,6 +9,7 @@ import org.jboss.logging.Logger;
 import org.wildfly.common.lock.Locks;
 
 import io.quarkus.bootstrap.runner.Timing;
+import io.quarkus.bootstrap.runtime.QuarkusRuntime;
 import io.quarkus.dev.appstate.ApplicationStateNotification;
 import io.quarkus.runtime.shutdown.ShutdownRecorder;
 import io.smallrye.common.constraint.Assert;
@@ -48,6 +49,7 @@ public abstract class Application implements Closeable {
      * stop notifications to the {@link ApplicationStateNotification}.
      */
     private final boolean auxiliaryApplication;
+    private final QuarkusRuntime quarkusRuntime;
 
     /**
      * Construct a new instance.
@@ -56,6 +58,12 @@ public abstract class Application implements Closeable {
      */
     protected Application(boolean auxiliaryApplication) {
         this.auxiliaryApplication = auxiliaryApplication;
+        this.quarkusRuntime = new QuarkusRuntimeImpl();
+    }
+
+    // TODO - Javadoc
+    public QuarkusRuntime getQuarkusRuntime() {
+        return quarkusRuntime;
     }
 
     /**

@@ -119,7 +119,7 @@ public abstract class AbstractConfigBuilder implements SmallRyeConfigBuilderCust
         });
     }
 
-    protected static void withCustomizer(SmallRyeConfigBuilder builder, SmallRyeConfigBuilderCustomizer customizer) {
+    public static void withCustomizer(SmallRyeConfigBuilder builder, SmallRyeConfigBuilderCustomizer customizer) {
         builder.withCustomizers(customizer);
     }
 

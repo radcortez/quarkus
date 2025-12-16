@@ -33,6 +33,7 @@ import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.bootstrap.logging.QuarkusDelayedHandler;
 import io.quarkus.bootstrap.naming.DisabledInitialContextManager;
 import io.quarkus.bootstrap.runner.Timing;
+import io.quarkus.bootstrap.runtime.QuarkusRuntime;
 import io.quarkus.builder.Version;
 import io.quarkus.deployment.GeneratedClassGizmoAdaptor;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -272,6 +273,15 @@ public class MainClassBuildStep {
                 startupContext, mv.getMethodParam(0));
 
         mv.invokeStaticMethod(CONFIGURE_STEP_TIME_ENABLED);
+
+        // Register QuarkusRuntime
+        MethodDescriptor getQuarkusRuntime = MethodDescriptor.ofMethod(Application.class, "getQuarkusRuntime",
+                QuarkusRuntime.class);
+        ResultHandle quarkusRuntime = mv.invokeVirtualMethod(getQuarkusRuntime, mv.getThis());
+        MethodDescriptor putValueInStartupContext = MethodDescriptor.ofMethod(StartupContext.class, "putValue", void.class,
+                String.class, Object.class);
+        mv.invokeVirtualMethod(putValueInStartupContext, startupContext, mv.load("io.quarkus.runtime.QuarkusRuntime"),
+                quarkusRuntime);
 
         tryBlock = mv.tryBlock();
         tryBlock.invokeStaticMethod(CONFIGURE_STEP_TIME_START);

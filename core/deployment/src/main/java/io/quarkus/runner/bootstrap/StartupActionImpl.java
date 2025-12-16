@@ -183,6 +183,7 @@ public class StartupActionImpl implements StartupAction {
             }, runtimeClassLoader);
         } catch (Throwable t) {
             // todo: dev mode expects run time config to be available immediately even if static init didn't complete.
+            // TODO - What to do here??
             try {
                 final Class<?> configClass = Class.forName(RunTimeConfigurationGenerator.CONFIG_CLASS_NAME, true,
                         runtimeClassLoader);
@@ -333,6 +334,7 @@ public class StartupActionImpl implements StartupAction {
                 appClass = Class.forName(className, true, runtimeClassLoader);
             } catch (Throwable t) {
                 // todo: dev mode expects run time config to be available immediately even if static init didn't complete.
+                // TODO - What to do here??
                 try {
                     final Class<?> configClass = Class.forName(RunTimeConfigurationGenerator.CONFIG_CLASS_NAME, true,
                             runtimeClassLoader);

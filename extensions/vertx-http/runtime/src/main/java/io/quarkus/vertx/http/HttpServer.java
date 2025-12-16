@@ -1,10 +1,8 @@
 package io.quarkus.vertx.http;
 
-import java.util.Map;
-
-import io.quarkus.runtime.QuarkusRuntime;
-import io.quarkus.runtime.QuarkusRuntime.Info;
-import io.quarkus.runtime.QuarkusRuntime.RuntimeKey;
+import io.quarkus.bootstrap.runtime.QuarkusRuntime;
+import io.quarkus.bootstrap.runtime.QuarkusRuntime.Info;
+import io.quarkus.bootstrap.runtime.QuarkusRuntime.RuntimeKey;
 
 /**
  * Represent the actual runtime values of the Quarkus HTTP Server.
@@ -43,47 +41,25 @@ public interface HttpServer {
 
     /**
      * The {@link Info} implementation for {@link HttpServer}. Construct instances of {@link HttpServer} with
-     * {@link QuarkusRuntime} values or with a custom Map.
+     * {@link io.quarkus.runtime.QuarkusRuntimeImpl} values.
      */
     Info<HttpServer> INFO = new Info<>() {
-        private final HttpServer HTTP_SERVER = new HttpServer() {
-            @Override
-            public int getPort() {
-                return QuarkusRuntime.getOrDefault(HTTP_PORT, -1);
-            }
-
-            @Override
-            public int getSecurePort() {
-                return QuarkusRuntime.getOrDefault(HTTPS_PORT, -1);
-            }
-
-            @Override
-            public int getManagementPort() {
-                return QuarkusRuntime.getOrDefault(MANAGEMENT_PORT, -1);
-            }
-        };
-
         @Override
-        public HttpServer get() {
-            return HTTP_SERVER;
-        }
-
-        @Override
-        public HttpServer get(Map<String, Object> properties) {
+        public HttpServer get(QuarkusRuntime quarkusRuntime) {
             return new HttpServer() {
                 @Override
                 public int getPort() {
-                    return (int) properties.getOrDefault("http-port", -1);
+                    return quarkusRuntime.getOrDefault(HTTP_PORT, -1);
                 }
 
                 @Override
                 public int getSecurePort() {
-                    return (int) properties.getOrDefault("ssl-port", -1);
+                    return quarkusRuntime.getOrDefault(HTTPS_PORT, -1);
                 }
 
                 @Override
                 public int getManagementPort() {
-                    return (int) properties.getOrDefault("management-port", -1);
+                    return quarkusRuntime.getOrDefault(MANAGEMENT_PORT, -1);
                 }
             };
         }

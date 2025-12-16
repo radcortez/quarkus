@@ -15,6 +15,9 @@ import java.util.concurrent.SubmissionPublisher;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Default;
+
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
@@ -60,8 +63,8 @@ import io.quarkus.runtime.logging.LogBuildTimeConfig;
 import io.quarkus.tls.deployment.spi.TlsRegistryBuildItem;
 import io.quarkus.vertx.core.deployment.CoreVertxBuildItem;
 import io.quarkus.vertx.core.deployment.EventLoopCountBuildItem;
+import io.quarkus.vertx.http.HttpServer;
 import io.quarkus.vertx.http.HttpServerOptionsCustomizer;
-import io.quarkus.vertx.http.HttpServerProducer;
 import io.quarkus.vertx.http.deployment.HttpSecurityProcessor.HttpSecurityConfigSetupCompleteBuildItem;
 import io.quarkus.vertx.http.deployment.devmode.NotFoundPageDisplayableEndpointBuildItem;
 import io.quarkus.vertx.http.deployment.spi.FrameworkEndpointsBuildItem;
@@ -162,7 +165,6 @@ class VertxHttpProcessor {
     AdditionalBeanBuildItem additionalBeans() {
         return AdditionalBeanBuildItem.builder()
                 .setUnremovable()
-                .addBeanClass(HttpServerProducer.class)
                 .addBeanClass(CurrentVertxRequest.class)
                 .addBeanClass(CurrentRequestProducer.class)
                 .addBeanClass(HttpCertificateUpdateEventListener.class)
@@ -219,6 +221,24 @@ class VertxHttpProcessor {
                 notFound.produce(i.getNotFoundPageDisplayableEndpoint());
             }
         }
+    }
+
+    @BuildStep
+    @Record(ExecutionTime.RUNTIME_INIT)
+    void httpServer(
+            VertxHttpRecorder recorder,
+            BuildProducer<SyntheticBeanBuildItem> syntheticBeans) {
+
+        SyntheticBeanBuildItem.ExtendedBeanConfigurator configurator = SyntheticBeanBuildItem
+                .configure(HttpServer.class)
+                .startup()
+                .setRuntimeInit()
+                .unremovable()
+                .supplier(recorder.httpServer())
+                .scope(ApplicationScoped.class)
+                .addQualifier(Default.class);
+
+        syntheticBeans.produce(configurator.done());
     }
 
     @BuildStep

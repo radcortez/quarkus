@@ -46,7 +46,9 @@ import org.opentest4j.TestAbortedException;
 
 import io.quarkus.bootstrap.app.CuratedApplication;
 import io.quarkus.bootstrap.logging.InitialConfigurator;
+import io.quarkus.bootstrap.runtime.QuarkusRuntime;
 import io.quarkus.deployment.dev.testing.TestConfig;
+import io.quarkus.runtime.QuarkusRuntimeImpl;
 import io.quarkus.runtime.logging.LogRuntimeConfig;
 import io.quarkus.runtime.test.TestHttpEndpointProvider;
 import io.quarkus.test.common.ArtifactLauncher;
@@ -117,7 +119,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
             if (!isBeforeEachCallbacksEmpty()) {
                 invokeBeforeEachCallbacks(createQuarkusTestMethodContext(context));
             }
-            QuarkusTestExtensionState state = getState(context);
+            IntegrationTestExtensionState state = (IntegrationTestExtensionState) getState(context);
             state.getListeningAddress().ifPresent(new Consumer<ListeningAddress>() {
                 @Override
                 public void accept(ListeningAddress listeningAddress) {
@@ -313,11 +315,13 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
 
             activateLogging();
             Optional<ListeningAddress> listeningAddress = startLauncher(launcher, additionalProperties);
+            QuarkusRuntime quarkusRuntime = new QuarkusRuntimeImpl.Builder().addDiscoveredInfos().build();
+            listeningAddress.ifPresent(address -> address.register(quarkusRuntime));
 
             Closeable resource = new IntegrationTestExtensionStateResource(launcher,
                     devServicesLaunchResult.getCuratedApplication());
-            IntegrationTestExtensionState state = new IntegrationTestExtensionState(testResourceManager, resource,
-                    AbstractTestWithCallbacksExtension::clearCallbacks, listeningAddress, sysPropRestore);
+            IntegrationTestExtensionState state = new IntegrationTestExtensionState(quarkusRuntime, testResourceManager,
+                    resource, AbstractTestWithCallbacksExtension::clearCallbacks, listeningAddress, sysPropRestore);
             testHttpEndpointProviders = TestHttpEndpointProvider.load();
 
             return state;

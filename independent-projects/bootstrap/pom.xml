@@ -87,6 +87,7 @@
         <module>runner</module>
         <module>gradle-resolver</module>
         <module>classloader-commons</module>
+        <module>runtime</module>
         <module>benchmarks</module>
     </modules>
     <build>

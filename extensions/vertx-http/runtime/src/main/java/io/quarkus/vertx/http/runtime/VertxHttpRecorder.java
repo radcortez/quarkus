@@ -1,6 +1,9 @@
 package io.quarkus.vertx.http.runtime;
 
 import static io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle.setContextSafe;
+import static io.quarkus.vertx.http.HttpServer.HTTP_SERVER;
+import static io.quarkus.vertx.http.HttpServer.MANAGEMENT_PORT;
+import static io.quarkus.vertx.http.HttpServer.MANAGEMENT_TEST_PORT;
 import static io.quarkus.vertx.http.runtime.options.HttpServerOptionsUtils.RANDOM_PORT_MAIN_HTTP;
 import static io.quarkus.vertx.http.runtime.options.HttpServerOptionsUtils.RANDOM_PORT_MANAGEMENT;
 import static io.quarkus.vertx.http.runtime.options.HttpServerOptionsUtils.getInsecureRequestStrategy;
@@ -51,6 +54,7 @@ import io.quarkus.arc.Arc;
 import io.quarkus.arc.ArcContainer;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.bootstrap.runner.Timing;
+import io.quarkus.bootstrap.runtime.QuarkusRuntime;
 import io.quarkus.dev.spi.DevModeType;
 import io.quarkus.dev.spi.HotReplacementContext;
 import io.quarkus.netty.runtime.virtual.VirtualAddress;
@@ -60,7 +64,6 @@ import io.quarkus.runtime.ErrorPageAction;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.LiveReloadConfig;
 import io.quarkus.runtime.QuarkusBindException;
-import io.quarkus.runtime.QuarkusRuntime;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.ThreadPoolConfig;
@@ -218,6 +221,7 @@ public class VertxHttpRecorder {
     final RuntimeValue<VertxHttpConfig> httpConfig;
     final RuntimeValue<ManagementConfig> managementConfig;
     final RuntimeValue<ShutdownConfig> shutdownConfig;
+    final RuntimeValue<QuarkusRuntime> quarkusRuntime;
 
     private static volatile Handler<HttpServerRequest> managementRouter;
     private static volatile Handler<HttpServerRequest> managementRouterDelegate;
@@ -227,12 +231,26 @@ public class VertxHttpRecorder {
             ManagementInterfaceBuildTimeConfig managementBuildTimeConfig,
             RuntimeValue<VertxHttpConfig> httpConfig,
             RuntimeValue<ManagementConfig> managementConfig,
-            RuntimeValue<ShutdownConfig> shutdownConfig) {
+            RuntimeValue<ShutdownConfig> shutdownConfig,
+            RuntimeValue<QuarkusRuntime> quarkusRuntime) {
         this.httpBuildTimeConfig = httpBuildTimeConfig;
         this.httpConfig = httpConfig;
         this.managementBuildTimeConfig = managementBuildTimeConfig;
         this.managementConfig = managementConfig;
         this.shutdownConfig = shutdownConfig;
+        this.quarkusRuntime = quarkusRuntime;
+    }
+
+    public Supplier<io.quarkus.vertx.http.HttpServer> httpServer() {
+        return new Supplier<>() {
+            @Override
+            public io.quarkus.vertx.http.HttpServer get() {
+                // TODO - Is this the right place to register this? To be able to inject this in IT as well?
+                //   Also, is this only called once?
+                quarkusRuntime.getValue().registerInfo(HTTP_SERVER, io.quarkus.vertx.http.HttpServer.INFO);
+                return quarkusRuntime.getValue().get(HTTP_SERVER);
+            }
+        };
     }
 
     public static void setHotReplacement(Handler<RoutingContext> handler, HotReplacementContext hrc) {
@@ -310,7 +328,8 @@ public class VertxHttpRecorder {
 
             var insecureRequestStrategy = getInsecureRequestStrategy(httpConfig, httpBuildConfig, LaunchMode.DEVELOPMENT);
             //we can't really do
-            doServerStart(vertx, httpBuildConfig, managementBuildTimeConfig, null, httpConfig, managementConfig,
+            // TODO - how to inject here QuarkusRuntime?
+            doServerStart(vertx, httpBuildConfig, httpConfig, null, managementBuildTimeConfig, managementConfig, null,
                     LaunchMode.DEVELOPMENT,
                     new Supplier<Integer>() {
                         @Override
@@ -369,8 +388,8 @@ public class VertxHttpRecorder {
             // Start the server
             if (closeTask == null) {
                 var insecureRequestStrategy = getInsecureRequestStrategy(httpConfiguration, httpBuildTimeConfig, launchMode);
-                doServerStart(vertx.get(), httpBuildTimeConfig, managementBuildTimeConfig, managementRouter,
-                        httpConfiguration, managementConfig, launchMode, ioThreads, websocketSubProtocols,
+                doServerStart(vertx.get(), httpBuildTimeConfig, httpConfiguration, managementRouter, managementBuildTimeConfig,
+                        managementConfig, quarkusRuntime.getValue(), launchMode, ioThreads, websocketSubProtocols,
                         insecureRequestStrategy,
                         auxiliaryApplication);
                 if (launchMode != LaunchMode.DEVELOPMENT) {
@@ -712,9 +731,12 @@ public class VertxHttpRecorder {
         return managementInterfaceDomainSocketFuture;
     }
 
-    private static CompletableFuture<HttpServer> initializeManagementInterface(Vertx vertx,
-            ManagementInterfaceBuildTimeConfig managementBuildTimeConfig, Handler<HttpServerRequest> managementRouter,
+    private static CompletableFuture<HttpServer> initializeManagementInterface(
+            Vertx vertx,
+            Handler<HttpServerRequest> managementRouter,
+            ManagementInterfaceBuildTimeConfig managementBuildTimeConfig,
             ManagementConfig managementConfig,
+            QuarkusRuntime quarkusRuntime,
             LaunchMode launchMode,
             List<String> websocketSubProtocols, TlsConfigurationRegistry registry) throws IOException {
         httpManagementServerOptions = null;
@@ -768,10 +790,9 @@ public class VertxHttpRecorder {
 
                             actualManagementPort = ar.result().actualPort();
                             if (actualManagementPort != httpManagementServerOptions.getPort()) {
-                                QuarkusRuntime.register(io.quarkus.vertx.http.HttpServer.MANAGEMENT_PORT, actualManagementPort);
+                                quarkusRuntime.register(MANAGEMENT_PORT, actualManagementPort);
                                 if (launchMode.isDevOrTest()) {
-                                    QuarkusRuntime.register(io.quarkus.vertx.http.HttpServer.MANAGEMENT_TEST_PORT,
-                                            actualManagementPort);
+                                    quarkusRuntime.register(MANAGEMENT_TEST_PORT, actualManagementPort);
                                 }
                             }
                             managementInterfaceFuture.complete(ar.result());
@@ -784,8 +805,11 @@ public class VertxHttpRecorder {
         return managementInterfaceFuture;
     }
 
-    private static CompletableFuture<String> initializeMainHttpServer(Vertx vertx, VertxHttpBuildTimeConfig httpBuildTimeConfig,
+    private static CompletableFuture<String> initializeMainHttpServer(
+            Vertx vertx,
+            VertxHttpBuildTimeConfig httpBuildTimeConfig,
             VertxHttpConfig httpConfig,
+            QuarkusRuntime quarkusRuntime,
             LaunchMode launchMode,
             Supplier<Integer> eventLoops, List<String> websocketSubProtocols, InsecureRequests insecureRequestStrategy,
             TlsConfigurationRegistry registry)
@@ -855,8 +879,8 @@ public class VertxHttpRecorder {
             @Override
             public Verticle get() {
                 return new WebDeploymentVerticle(httpMainServerOptions, httpMainSslServerOptions, httpMainDomainSocketOptions,
-                        launchMode, insecureRequestStrategy, httpConfig, connectionCount, registry, startEventsFired,
-                        httpBuildTimeConfig);
+                        launchMode, insecureRequestStrategy, connectionCount, registry, startEventsFired, httpBuildTimeConfig,
+                        httpConfig, quarkusRuntime);
             }
         }, new DeploymentOptions().setInstances(ioThreads), new Handler<>() {
             @Override
@@ -872,11 +896,17 @@ public class VertxHttpRecorder {
         return futureResult;
     }
 
-    private static void doServerStart(Vertx vertx, VertxHttpBuildTimeConfig httpBuildTimeConfig,
-            ManagementInterfaceBuildTimeConfig managementBuildTimeConfig, Handler<HttpServerRequest> managementRouter,
-            VertxHttpConfig httpConfig, ManagementConfig managementConfig,
+    private static void doServerStart(
+            Vertx vertx,
+            VertxHttpBuildTimeConfig httpBuildTimeConfig,
+            VertxHttpConfig httpConfig,
+            Handler<HttpServerRequest> managementRouter,
+            ManagementInterfaceBuildTimeConfig managementBuildTimeConfig,
+            ManagementConfig managementConfig,
+            QuarkusRuntime quarkusRuntime,
             LaunchMode launchMode,
-            Supplier<Integer> eventLoops, List<String> websocketSubProtocols,
+            Supplier<Integer> eventLoops,
+            List<String> websocketSubProtocols,
             InsecureRequests insecureRequestStrategy,
             boolean auxiliaryApplication) throws IOException {
 
@@ -885,10 +915,11 @@ public class VertxHttpRecorder {
             registry = Arc.container().select(TlsConfigurationRegistry.class).orNull();
         }
 
-        var mainServerFuture = initializeMainHttpServer(vertx, httpBuildTimeConfig, httpConfig, launchMode, eventLoops,
+        var mainServerFuture = initializeMainHttpServer(vertx, httpBuildTimeConfig, httpConfig, quarkusRuntime, launchMode,
+                eventLoops,
                 websocketSubProtocols, insecureRequestStrategy, registry);
-        var managementInterfaceFuture = initializeManagementInterface(vertx, managementBuildTimeConfig, managementRouter,
-                managementConfig, launchMode, websocketSubProtocols, registry);
+        var managementInterfaceFuture = initializeManagementInterface(vertx, managementRouter, managementBuildTimeConfig,
+                managementConfig, quarkusRuntime, launchMode, websocketSubProtocols, registry);
         var managementInterfaceDomainSocketFuture = initializeManagementInterfaceWithDomainSocket(vertx,
                 managementBuildTimeConfig, managementRouter, managementConfig, websocketSubProtocols);
 
@@ -1176,27 +1207,37 @@ public class VertxHttpRecorder {
         private final HttpServerOptions domainSocketOptions;
         private final LaunchMode launchMode;
         private final InsecureRequests insecureRequests;
-        private final VertxHttpConfig quarkusConfig;
         private final AtomicInteger connectionCount;
         private final List<Long> reloadingTasks = new CopyOnWriteArrayList<>();
         private final AtomicBoolean startEventsFired;
         private final VertxHttpBuildTimeConfig httpBuildTimeConfig;
+        private final VertxHttpConfig httpConfig;
+        private final QuarkusRuntime quarkusRuntime;
 
-        public WebDeploymentVerticle(HttpServerOptions httpOptions, HttpServerOptions httpsOptions,
-                HttpServerOptions domainSocketOptions, LaunchMode launchMode,
-                InsecureRequests insecureRequests, VertxHttpConfig httpConfig, AtomicInteger connectionCount,
-                TlsConfigurationRegistry registry, AtomicBoolean startEventsFired,
-                VertxHttpBuildTimeConfig httpBuildTimeConfig) {
+        public WebDeploymentVerticle(
+                HttpServerOptions httpOptions,
+                HttpServerOptions httpsOptions,
+                HttpServerOptions domainSocketOptions,
+                LaunchMode launchMode,
+                InsecureRequests insecureRequests,
+                AtomicInteger connectionCount,
+                TlsConfigurationRegistry registry,
+                AtomicBoolean startEventsFired,
+                VertxHttpBuildTimeConfig httpBuildTimeConfig,
+                VertxHttpConfig httpConfig,
+                QuarkusRuntime quarkusRuntime) {
+
             this.httpOptions = httpOptions;
             this.httpsOptions = httpsOptions;
             this.launchMode = launchMode;
             this.domainSocketOptions = domainSocketOptions;
             this.insecureRequests = insecureRequests;
-            this.quarkusConfig = httpConfig;
+            this.httpConfig = httpConfig;
             this.connectionCount = connectionCount;
             this.registry = registry;
             this.startEventsFired = startEventsFired;
             this.httpBuildTimeConfig = httpBuildTimeConfig;
+            this.quarkusRuntime = quarkusRuntime;
             org.crac.Core.getGlobalContext().register(this);
         }
 
@@ -1308,12 +1349,12 @@ public class VertxHttpRecorder {
                 Promise<Void> startFuture, AtomicInteger remainingCount, AtomicInteger currentConnectionCount,
                 ArcContainer container, boolean notifyStartObservers) {
 
-            if (quarkusConfig.limits().maxConnections().isPresent() && quarkusConfig.limits().maxConnections().getAsInt() > 0) {
+            if (httpConfig.limits().maxConnections().isPresent() && httpConfig.limits().maxConnections().getAsInt() > 0) {
                 var tracker = vertx.isMetricsEnabled()
                         ? ((ExtendedQuarkusVertxHttpMetrics) ((VertxInternal) vertx).metricsSPI()).getHttpConnectionTracker()
                         : ExtendedQuarkusVertxHttpMetrics.NOOP_CONNECTION_TRACKER;
 
-                final int maxConnections = quarkusConfig.limits().maxConnections().getAsInt();
+                final int maxConnections = httpConfig.limits().maxConnections().getAsInt();
                 tracker.initialize(maxConnections, currentConnectionCount);
                 httpServer.connectionHandler(new Handler<HttpConnection>() {
 
@@ -1350,11 +1391,11 @@ public class VertxHttpRecorder {
                             startFuture.fail(event.cause());
                         }
                     } else {
-                        if (https && (quarkusConfig.ssl().certificate().reloadPeriod().isPresent())) {
+                        if (https && (httpConfig.ssl().certificate().reloadPeriod().isPresent())) {
                             try {
                                 long l = TlsCertificateReloader.initCertReloadingAction(
-                                        vertx, httpsServer, httpsOptions, quarkusConfig.ssl(), registry,
-                                        getHttpServerTlsConfigName(quarkusConfig, httpBuildTimeConfig, launchMode));
+                                        vertx, httpsServer, httpsOptions, httpConfig.ssl(), registry,
+                                        getHttpServerTlsConfigName(httpConfig, httpBuildTimeConfig, launchMode));
                                 if (l != -1) {
                                     reloadingTasks.add(l);
                                 }
@@ -1367,7 +1408,7 @@ public class VertxHttpRecorder {
                         if (https) {
                             container.instance(HttpCertificateUpdateEventListener.class).get()
                                     .register(event.result(),
-                                            getHttpServerTlsConfigName(quarkusConfig, httpBuildTimeConfig, launchMode)
+                                            getHttpServerTlsConfigName(httpConfig, httpBuildTimeConfig, launchMode)
                                                     .orElse(TlsConfig.DEFAULT_NAME),
                                             "http server");
                         }
@@ -1382,16 +1423,16 @@ public class VertxHttpRecorder {
                             if (https) {
                                 actualHttpsPort = actualPort;
                                 validateHttpPorts(actualHttpPort, actualHttpsPort);
-                                QuarkusRuntime.register(io.quarkus.vertx.http.HttpServer.HTTPS_PORT, actualPort);
+                                quarkusRuntime.register(io.quarkus.vertx.http.HttpServer.HTTPS_PORT, actualPort);
                                 if (launchMode.isDevOrTest()) {
-                                    QuarkusRuntime.register(io.quarkus.vertx.http.HttpServer.HTTPS_TEST_PORT, actualPort);
+                                    quarkusRuntime.register(io.quarkus.vertx.http.HttpServer.HTTPS_TEST_PORT, actualPort);
                                 }
                             } else {
                                 actualHttpPort = actualPort;
                                 validateHttpPorts(actualHttpPort, actualHttpsPort);
-                                QuarkusRuntime.register(io.quarkus.vertx.http.HttpServer.HTTP_PORT, actualPort);
+                                quarkusRuntime.register(io.quarkus.vertx.http.HttpServer.HTTP_PORT, actualPort);
                                 if (launchMode.isDevOrTest()) {
-                                    QuarkusRuntime.register(io.quarkus.vertx.http.HttpServer.HTTP_TEST_PORT, actualPort);
+                                    quarkusRuntime.register(io.quarkus.vertx.http.HttpServer.HTTP_TEST_PORT, actualPort);
                                 }
                             }
 

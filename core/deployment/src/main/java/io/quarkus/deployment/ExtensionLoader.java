@@ -56,6 +56,7 @@ import org.jboss.logging.Logger;
 import org.wildfly.common.function.Functions;
 
 import io.quarkus.bootstrap.model.ApplicationModel;
+import io.quarkus.bootstrap.runtime.QuarkusRuntime;
 import io.quarkus.builder.BuildChainBuilder;
 import io.quarkus.builder.BuildContext;
 import io.quarkus.builder.BuildStepBuilder;
@@ -93,10 +94,13 @@ import io.quarkus.deployment.util.ServiceUtil;
 import io.quarkus.dev.spi.DevModeType;
 import io.quarkus.gizmo.BytecodeCreator;
 import io.quarkus.gizmo.FieldDescriptor;
+import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.QuarkusRuntimeImpl;
 import io.quarkus.runtime.RuntimeValue;
+import io.quarkus.runtime.StartupContext;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
 import io.quarkus.runtime.annotations.Recorder;
@@ -219,8 +223,29 @@ public final class ExtensionLoader {
                     }
                 };
 
+                proxies.put(QuarkusRuntime.class, new QuarkusRuntimeImpl());
+                ObjectLoader quarkusRuntimeLoader = new ObjectLoader() {
+                    @Override
+                    public ResultHandle load(BytecodeCreator body, Object obj, boolean staticInit) {
+                        // TODO - What we get here is the deploy method with StartupContext, but is it always like this?
+                        MethodCreator methodCreator = (MethodCreator) body;
+                        MethodDescriptor getValue = MethodDescriptor.ofMethod(StartupContext.class, "getValue", Object.class,
+                                String.class);
+
+                        ResultHandle startupContext = methodCreator.getMethodParam(0);
+                        return methodCreator.invokeVirtualMethod(getValue, startupContext,
+                                methodCreator.load("io.quarkus.runtime.QuarkusRuntime"));
+                    }
+
+                    @Override
+                    public boolean canHandleObject(Object obj, boolean staticInit) {
+                        return obj instanceof QuarkusRuntime && !staticInit;
+                    }
+                };
+
                 bc.produce(new BytecodeRecorderObjectLoaderBuildItem(rootLoader));
                 bc.produce(new BytecodeRecorderObjectLoaderBuildItem(mappingLoader));
+                bc.produce(new BytecodeRecorderObjectLoaderBuildItem(quarkusRuntimeLoader));
             }
 
             @Override
