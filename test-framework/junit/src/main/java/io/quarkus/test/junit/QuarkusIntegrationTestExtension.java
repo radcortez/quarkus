@@ -123,7 +123,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
             state.getListeningAddress().ifPresent(new Consumer<ListeningAddress>() {
                 @Override
                 public void accept(ListeningAddress listeningAddress) {
-                    RestAssuredStateManager.setURL(listeningAddress.isSsl(), listeningAddress.getPort(),
+                    RestAssuredStateManager.setURL(listeningAddress.isSsl(), listeningAddress.port(),
                             QuarkusTestExtension.getEndpointPath(context, testHttpEndpointProviders));
                 }
             });
@@ -316,6 +316,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
             activateLogging();
             Optional<ListeningAddress> listeningAddress = startLauncher(launcher, additionalProperties);
             ValueRegistry valueRegistry = new ValueRegistryImpl.Builder().addDiscoveredInfos().build();
+            listeningAddress.ifPresent(address -> address.register(valueRegistry));
 
             Closeable resource = new IntegrationTestExtensionStateResource(launcher,
                     devServicesLaunchResult.getCuratedApplication());
