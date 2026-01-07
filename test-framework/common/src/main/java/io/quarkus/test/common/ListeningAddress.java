@@ -10,14 +10,13 @@ public record ListeningAddress(Integer port, String protocol) {
     }
 
     public void register(ValueRegistry valueRegistry) {
-        valueRegistry.register(PORT, port);
-        valueRegistry.register(PROTOCOL, protocol);
         valueRegistry.register(isSsl() ? HTTPS_PORT : HTTP_PORT, port);
+        valueRegistry.register(isSsl() ? HTTPS_TEST_PORT : HTTP_TEST_PORT, port);
     }
 
-    public static final RuntimeKey<Integer> PORT = RuntimeKey.intKey("port");
-    public static final RuntimeKey<String> PROTOCOL = RuntimeKey.key("protocol");
     // Compatibility with Config and io.quarkus.vertx.http.HttpServer
     public static final RuntimeKey<Integer> HTTP_PORT = RuntimeKey.intKey("quarkus.http.port");
+    public static final RuntimeKey<Integer> HTTP_TEST_PORT = RuntimeKey.intKey("quarkus.http.test-port");
     public static final RuntimeKey<Integer> HTTPS_PORT = RuntimeKey.intKey("quarkus.http.ssl-port");
+    public static final RuntimeKey<Integer> HTTPS_TEST_PORT = RuntimeKey.intKey("quarkus.http.test-ssl-port");
 }

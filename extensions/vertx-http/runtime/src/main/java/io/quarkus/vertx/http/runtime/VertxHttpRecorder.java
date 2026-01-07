@@ -1,7 +1,12 @@
 package io.quarkus.vertx.http.runtime;
 
 import static io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle.setContextSafe;
+import static io.quarkus.vertx.http.HttpServer.HTTPS_PORT;
+import static io.quarkus.vertx.http.HttpServer.HTTPS_TEST_PORT;
+import static io.quarkus.vertx.http.HttpServer.HTTP_PORT;
 import static io.quarkus.vertx.http.HttpServer.HTTP_SERVER;
+import static io.quarkus.vertx.http.HttpServer.HTTP_TEST_PORT;
+import static io.quarkus.vertx.http.HttpServer.LOCAL_BASE_URI;
 import static io.quarkus.vertx.http.HttpServer.MANAGEMENT_PORT;
 import static io.quarkus.vertx.http.HttpServer.MANAGEMENT_TEST_PORT;
 import static io.quarkus.vertx.http.runtime.options.HttpServerOptionsUtils.RANDOM_PORT_MAIN_HTTP;
@@ -60,6 +65,7 @@ import io.quarkus.netty.runtime.virtual.VirtualAddress;
 import io.quarkus.netty.runtime.virtual.VirtualChannel;
 import io.quarkus.netty.runtime.virtual.VirtualServerChannel;
 import io.quarkus.registry.ValueRegistry;
+import io.quarkus.registry.ValueRegistry.RuntimeKey;
 import io.quarkus.runtime.ErrorPageAction;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.LiveReloadConfig;
@@ -67,6 +73,7 @@ import io.quarkus.runtime.QuarkusBindException;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
 import io.quarkus.runtime.ThreadPoolConfig;
+import io.quarkus.runtime.ValueRegistryImpl;
 import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.quarkus.runtime.configuration.MemorySize;
@@ -221,7 +228,8 @@ public class VertxHttpRecorder {
     final RuntimeValue<VertxHttpConfig> httpConfig;
     final RuntimeValue<ManagementConfig> managementConfig;
     final RuntimeValue<ShutdownConfig> shutdownConfig;
-    final RuntimeValue<ValueRegistry> valueRegistry;
+
+    private static volatile RuntimeValue<ValueRegistry> valueRegistry;
 
     private static volatile Handler<HttpServerRequest> managementRouter;
     private static volatile Handler<HttpServerRequest> managementRouterDelegate;
@@ -238,7 +246,7 @@ public class VertxHttpRecorder {
         this.managementBuildTimeConfig = managementBuildTimeConfig;
         this.managementConfig = managementConfig;
         this.shutdownConfig = shutdownConfig;
-        this.valueRegistry = valueRegistry;
+        VertxHttpRecorder.valueRegistry = valueRegistry;
     }
 
     public static void setHotReplacement(Handler<RoutingContext> handler, HotReplacementContext hrc) {
@@ -315,9 +323,7 @@ public class VertxHttpRecorder {
             rootHandler = root;
 
             var insecureRequestStrategy = getInsecureRequestStrategy(httpConfig, httpBuildConfig, LaunchMode.DEVELOPMENT);
-            //we can't really do
-            // TODO - how to inject here ValueRegistry?
-            doServerStart(vertx, httpBuildConfig, httpConfig, null, managementBuildTimeConfig, managementConfig, null,
+            doServerStart(vertx, httpBuildConfig, httpConfig, null, managementBuildTimeConfig, managementConfig,
                     LaunchMode.DEVELOPMENT,
                     new Supplier<Integer>() {
                         @Override
@@ -350,7 +356,7 @@ public class VertxHttpRecorder {
             boolean auxiliaryApplication, boolean disableWebSockets)
             throws IOException {
 
-        // TODO - Should we use ServiceLoader instead for this case as well?
+        // We could register this with the ServiceLoader, but this just avoids additional native image work
         valueRegistry.getValue().registerInfo(HTTP_SERVER, io.quarkus.vertx.http.HttpServer.INFO);
 
         // disable websockets if we have determined at build time that we should and the user has not overridden the relevant Vert.x property
@@ -380,7 +386,7 @@ public class VertxHttpRecorder {
             if (closeTask == null) {
                 var insecureRequestStrategy = getInsecureRequestStrategy(httpConfiguration, httpBuildTimeConfig, launchMode);
                 doServerStart(vertx.get(), httpBuildTimeConfig, httpConfiguration, managementRouter, managementBuildTimeConfig,
-                        managementConfig, valueRegistry.getValue(), launchMode, ioThreads, websocketSubProtocols,
+                        managementConfig, launchMode, ioThreads, websocketSubProtocols,
                         insecureRequestStrategy,
                         auxiliaryApplication);
                 if (launchMode != LaunchMode.DEVELOPMENT) {
@@ -727,7 +733,6 @@ public class VertxHttpRecorder {
             Handler<HttpServerRequest> managementRouter,
             ManagementInterfaceBuildTimeConfig managementBuildTimeConfig,
             ManagementConfig managementConfig,
-            ValueRegistry valueRegistry,
             LaunchMode launchMode,
             List<String> websocketSubProtocols, TlsConfigurationRegistry registry) throws IOException {
         httpManagementServerOptions = null;
@@ -781,9 +786,9 @@ public class VertxHttpRecorder {
 
                             actualManagementPort = ar.result().actualPort();
                             if (actualManagementPort != httpManagementServerOptions.getPort()) {
-                                valueRegistry.register(MANAGEMENT_PORT, actualManagementPort);
+                                valueRegistry.getValue().register(MANAGEMENT_PORT, actualManagementPort);
                                 if (launchMode.isDevOrTest()) {
-                                    valueRegistry.register(MANAGEMENT_TEST_PORT, actualManagementPort);
+                                    valueRegistry.getValue().register(MANAGEMENT_TEST_PORT, actualManagementPort);
                                 }
                             }
                             managementInterfaceFuture.complete(ar.result());
@@ -800,7 +805,6 @@ public class VertxHttpRecorder {
             Vertx vertx,
             VertxHttpBuildTimeConfig httpBuildTimeConfig,
             VertxHttpConfig httpConfig,
-            ValueRegistry valueRegistry,
             LaunchMode launchMode,
             Supplier<Integer> eventLoops, List<String> websocketSubProtocols, InsecureRequests insecureRequestStrategy,
             TlsConfigurationRegistry registry)
@@ -871,7 +875,7 @@ public class VertxHttpRecorder {
             public Verticle get() {
                 return new WebDeploymentVerticle(httpMainServerOptions, httpMainSslServerOptions, httpMainDomainSocketOptions,
                         launchMode, insecureRequestStrategy, connectionCount, registry, startEventsFired, httpBuildTimeConfig,
-                        httpConfig, valueRegistry);
+                        httpConfig);
             }
         }, new DeploymentOptions().setInstances(ioThreads), new Handler<>() {
             @Override
@@ -894,7 +898,6 @@ public class VertxHttpRecorder {
             Handler<HttpServerRequest> managementRouter,
             ManagementInterfaceBuildTimeConfig managementBuildTimeConfig,
             ManagementConfig managementConfig,
-            ValueRegistry valueRegistry,
             LaunchMode launchMode,
             Supplier<Integer> eventLoops,
             List<String> websocketSubProtocols,
@@ -906,11 +909,10 @@ public class VertxHttpRecorder {
             registry = Arc.container().select(TlsConfigurationRegistry.class).orNull();
         }
 
-        var mainServerFuture = initializeMainHttpServer(vertx, httpBuildTimeConfig, httpConfig, valueRegistry, launchMode,
-                eventLoops,
-                websocketSubProtocols, insecureRequestStrategy, registry);
+        var mainServerFuture = initializeMainHttpServer(vertx, httpBuildTimeConfig, httpConfig, launchMode,
+                eventLoops, websocketSubProtocols, insecureRequestStrategy, registry);
         var managementInterfaceFuture = initializeManagementInterface(vertx, managementRouter, managementBuildTimeConfig,
-                managementConfig, valueRegistry, launchMode, websocketSubProtocols, registry);
+                managementConfig, launchMode, websocketSubProtocols, registry);
         var managementInterfaceDomainSocketFuture = initializeManagementInterfaceWithDomainSocket(vertx,
                 managementBuildTimeConfig, managementRouter, managementConfig, websocketSubProtocols);
 
@@ -1188,6 +1190,8 @@ public class VertxHttpRecorder {
     }
 
     private static class WebDeploymentVerticle extends AbstractVerticle implements Resource {
+        private static final AtomicBoolean registerHttpServer = new AtomicBoolean();
+        private static final AtomicBoolean registerHttpsServer = new AtomicBoolean();
 
         private final TlsConfigurationRegistry registry;
         private HttpServer httpServer;
@@ -1215,8 +1219,7 @@ public class VertxHttpRecorder {
                 TlsConfigurationRegistry registry,
                 AtomicBoolean startEventsFired,
                 VertxHttpBuildTimeConfig httpBuildTimeConfig,
-                VertxHttpConfig httpConfig,
-                ValueRegistry valueRegistry) {
+                VertxHttpConfig httpConfig) {
 
             this.httpOptions = httpOptions;
             this.httpsOptions = httpsOptions;
@@ -1228,7 +1231,8 @@ public class VertxHttpRecorder {
             this.registry = registry;
             this.startEventsFired = startEventsFired;
             this.httpBuildTimeConfig = httpBuildTimeConfig;
-            this.valueRegistry = valueRegistry;
+            this.valueRegistry = VertxHttpRecorder.valueRegistry != null ? VertxHttpRecorder.valueRegistry.getValue()
+                    : new ValueRegistryImpl.Builder().build();
             org.crac.Core.getGlobalContext().register(this);
         }
 
@@ -1382,6 +1386,38 @@ public class VertxHttpRecorder {
                             startFuture.fail(event.cause());
                         }
                     } else {
+                        // Port may be random, so set the actual port
+                        int actualPort = event.result().actualPort();
+
+                        if (https) {
+                            // Note that a new HttpServer is created for each IO thread, but we only want to register the
+                            // real ports once. See https://vertx.io/docs/vertx-core/java/#_server_sharing
+                            if (registerHttpsServer.compareAndSet(false, true)) {
+                                actualHttpsPort = actualPort;
+                                validateHttpPorts(actualHttpPort, actualHttpsPort);
+                                valueRegistry.register(HTTPS_PORT, actualPort);
+                                if (launchMode.isDevOrTest()) {
+                                    valueRegistry.register(HTTPS_TEST_PORT, actualPort);
+                                    // TODO - Should we register test.url.ssl? We don't use it, or have tests for it
+                                }
+                            }
+                        } else {
+                            // Note that a new HttpServer is created for each IO thread, but we only want to register the
+                            // real ports once. See https://vertx.io/docs/vertx-core/java/#_server_sharing
+                            if (registerHttpServer.compareAndSet(false, true)) {
+                                actualHttpPort = actualPort;
+                                validateHttpPorts(actualHttpPort, actualHttpsPort);
+                                valueRegistry.register(HTTP_PORT, actualPort);
+                                URI localBaseUri = localBaseUri("http", actualPort);
+                                valueRegistry.register(LOCAL_BASE_URI, localBaseUri);
+                                if (launchMode.isDevOrTest()) {
+                                    valueRegistry.register(HTTP_TEST_PORT, actualPort);
+                                    // Compatibility with test.url
+                                    valueRegistry.register(RuntimeKey.key("test.url"), localBaseUri.toString());
+                                }
+                            }
+                        }
+
                         if (https && (httpConfig.ssl().certificate().reloadPeriod().isPresent())) {
                             try {
                                 long l = TlsCertificateReloader.initCertReloadingAction(
@@ -1404,29 +1440,7 @@ public class VertxHttpRecorder {
                                             "http server");
                         }
 
-                        // Note that a new HttpServer is created for each IO thread but we only want to fire the events (HttpServerStart etc.) once,
-                        // for the first server that started listening. Same for registering the real ports, we only want to do it once.
-                        // See https://vertx.io/docs/vertx-core/java/#_server_sharing for more information
                         if (notifyStartObservers) {
-                            // Port may be random, so set the actual port
-                            int actualPort = event.result().actualPort();
-
-                            if (https) {
-                                actualHttpsPort = actualPort;
-                                validateHttpPorts(actualHttpPort, actualHttpsPort);
-                                valueRegistry.register(io.quarkus.vertx.http.HttpServer.HTTPS_PORT, actualPort);
-                                if (launchMode.isDevOrTest()) {
-                                    valueRegistry.register(io.quarkus.vertx.http.HttpServer.HTTPS_TEST_PORT, actualPort);
-                                }
-                            } else {
-                                actualHttpPort = actualPort;
-                                validateHttpPorts(actualHttpPort, actualHttpsPort);
-                                valueRegistry.register(io.quarkus.vertx.http.HttpServer.HTTP_PORT, actualPort);
-                                if (launchMode.isDevOrTest()) {
-                                    valueRegistry.register(io.quarkus.vertx.http.HttpServer.HTTP_TEST_PORT, actualPort);
-                                }
-                            }
-
                             Event<Object> startEvent = container.beanManager().getEvent();
                             if (https) {
                                 startEvent.select(HttpsServerStart.class).fireAsync(new HttpsServerStart(options));
@@ -1448,6 +1462,30 @@ public class VertxHttpRecorder {
                         startFuture
                                 .fail(new IllegalArgumentException("Both http and https servers started on port " + httpPort));
                     }
+                }
+
+                private URI localBaseUri(String scheme, int actualPort) {
+                    SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+                    String host = options.getHost();
+                    if (host.equals("0.0.0.0")) {
+                        host = "localhost";
+                    }
+                    String rootPath = httpBuildTimeConfig.rootPath();
+                    Optional<String> contextPath = config.getOptionalValue("quarkus.servlet.context-path", String.class);
+                    StringBuilder path = new StringBuilder(rootPath);
+                    if (!rootPath.endsWith("/")) {
+                        path.append("/");
+                    }
+                    if (!rootPath.startsWith("/")) {
+                        path.insert(0, "/");
+                    }
+                    if (contextPath.isPresent()) {
+                        path.append(contextPath.get().startsWith("/") ? contextPath.get().substring(1) : contextPath.get());
+                    }
+                    if (path.charAt(path.length() - 1) == '/') {
+                        path.deleteCharAt(path.length() - 1);
+                    }
+                    return URI.create(scheme + "://" + host + ":" + actualPort + path);
                 }
             });
         }

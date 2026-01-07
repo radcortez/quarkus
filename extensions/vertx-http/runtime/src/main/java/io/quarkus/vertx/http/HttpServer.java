@@ -1,5 +1,7 @@
 package io.quarkus.vertx.http;
 
+import java.net.URI;
+
 import io.quarkus.registry.ValueRegistry;
 import io.quarkus.registry.ValueRegistry.RuntimeInfo;
 import io.quarkus.registry.ValueRegistry.RuntimeKey;
@@ -7,7 +9,6 @@ import io.quarkus.registry.ValueRegistry.RuntimeKey;
 /**
  * Represent the actual runtime values of the Quarkus HTTP Server.
  */
-// TODO - Ideally we should store the SocketAddress, but Vertx only returns the port. Look into Vert.x to change it.
 public interface HttpServer {
     RuntimeKey<Integer> HTTP_PORT = RuntimeKey.intKey("quarkus.http.port");
     RuntimeKey<Integer> HTTP_TEST_PORT = RuntimeKey.intKey("quarkus.http.test-port");
@@ -15,6 +16,7 @@ public interface HttpServer {
     RuntimeKey<Integer> HTTPS_TEST_PORT = RuntimeKey.intKey("quarkus.http.test-ssl-port");
     RuntimeKey<Integer> MANAGEMENT_PORT = RuntimeKey.intKey("quarkus.management.port");
     RuntimeKey<Integer> MANAGEMENT_TEST_PORT = RuntimeKey.intKey("quarkus.management.test-port");
+    RuntimeKey<URI> LOCAL_BASE_URI = RuntimeKey.key("quarkus.http.local-base-uri");
 
     RuntimeKey<HttpServer> HTTP_SERVER = RuntimeKey.key(HttpServer.class);
 
@@ -40,6 +42,13 @@ public interface HttpServer {
     int getManagementPort();
 
     /**
+     * Return the local base URI that Quarkus is serving on.
+     *
+     * @return the local base URI that Quarkus is serving on.
+     */
+    URI getLocalBaseUri();
+
+    /**
      * The {@link RuntimeInfo} implementation for {@link HttpServer}. Construct instances of {@link HttpServer} with
      * {@link ValueRegistry} values.
      */
@@ -60,6 +69,11 @@ public interface HttpServer {
                 @Override
                 public int getManagementPort() {
                     return valueRegistry.getOrDefault(MANAGEMENT_PORT, -1);
+                }
+
+                @Override
+                public URI getLocalBaseUri() {
+                    return valueRegistry.get(LOCAL_BASE_URI);
                 }
             };
         }
