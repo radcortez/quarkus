@@ -6,28 +6,38 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
 
+import org.jboss.arquillian.container.spi.context.annotation.DeploymentScoped;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.arquillian.test.spi.TestEnricher;
+
+import io.quarkus.registry.ValueRegistry;
+import io.quarkus.registry.ValueRegistry.RuntimeKey;
 
 /**
  * Performs injection of @ArquillianResource fields of type java.net.URL
  */
 public class ArquillianResourceURLEnricher implements TestEnricher {
 
+    @Inject
+    @DeploymentScoped
+    private Instance<QuarkusDeployment> deployment;
+
     @Override
     public void enrich(Object testCase) {
         if (QuarkusDeployableContainer.testInstance != null) {
-            Class clazz = QuarkusDeployableContainer.testInstance.getClass();
+            Class<?> clazz = QuarkusDeployableContainer.testInstance.getClass();
             while (clazz != Object.class) {
                 Field[] fields = clazz.getDeclaredFields();
                 for (Field field : fields) {
                     for (Annotation annotation : field.getAnnotations()) {
                         if (annotation.annotationType().getName().equals(ArquillianResource.class.getName())) {
+                            String testUrl = testUrl(deployment);
                             if (field.getType().equals(URL.class)) {
                                 try {
                                     field.setAccessible(true);
-                                    URL url = new URL(System.getProperty("test.url"));
-                                    field.set(QuarkusDeployableContainer.testInstance, url);
+                                    field.set(QuarkusDeployableContainer.testInstance, new URL(testUrl));
                                     break;
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
@@ -35,8 +45,7 @@ public class ArquillianResourceURLEnricher implements TestEnricher {
                             } else if (field.getType().equals(URI.class)) {
                                 try {
                                     field.setAccessible(true);
-                                    URI url = new URI(System.getProperty("test.url"));
-                                    field.set(QuarkusDeployableContainer.testInstance, url);
+                                    field.set(QuarkusDeployableContainer.testInstance, URI.create(testUrl));
                                     break;
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
@@ -53,5 +62,15 @@ public class ArquillianResourceURLEnricher implements TestEnricher {
     @Override
     public Object[] resolve(Method method) {
         return null;
+    }
+
+    private String testUrl(Instance<QuarkusDeployment> deployment) {
+        ValueRegistry valueRegistry = deployment.get().getRunningApp().valueRegistry();
+        String url = valueRegistry.get(RuntimeKey.key("test.url"));
+        // This is to work around https://github.com/arquillian/arquillian-core/issues/216
+        if (!url.endsWith("/")) {
+            url = url + "/";
+        }
+        return url;
     }
 }
