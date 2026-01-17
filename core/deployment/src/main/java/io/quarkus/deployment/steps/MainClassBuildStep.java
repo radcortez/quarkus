@@ -77,6 +77,7 @@ import io.quarkus.gizmo.MethodCreator;
 import io.quarkus.gizmo.MethodDescriptor;
 import io.quarkus.gizmo.ResultHandle;
 import io.quarkus.gizmo.TryBlock;
+import io.quarkus.registry.RuntimeInfoProvider;
 import io.quarkus.registry.RuntimeInfoProvider.RuntimeSource;
 import io.quarkus.registry.ValueRegistry;
 import io.quarkus.runtime.Application;
@@ -238,20 +239,6 @@ public class MainClassBuildStep {
                 Object.class);
         mv.invokeVirtualMethod(putValueInStartupContext, startupContext, mv.load(ValueRegistry.class.getName()), valueRegistry);
 
-        // Create Runtime Config and associate it with the current classloader
-        mv.invokeStaticMethod(RunTimeConfigurationGenerator.C_CREATE_RUN_TIME_CONFIG, valueRegistry);
-
-        // Register RuntimeInfoProviders with ValueRegistry
-        for (ValueRegistryRuntimeInfoProviderBuildItem runtimeInfoProviderClass : runtimeInfoProviders) {
-            ResultHandle runtimeInfoProvider = mv.newInstance(ofConstructor(runtimeInfoProviderClass.getRuntimeInfoProvider()));
-            mv.invokeVirtualMethod(
-                    ofMethod(runtimeInfoProviderClass.getRuntimeInfoProvider(), "register", void.class, ValueRegistry.class,
-                            RuntimeSource.class),
-                    runtimeInfoProvider,
-                    valueRegistry,
-                    mv.invokeStaticMethod(ofMethod(ConfigRuntimeSource.class, "runtimeSource", RuntimeSource.class)));
-        }
-
         // Make sure we set properties in doStartup as well. This is necessary because setting them in the static-init
         // sets them at build-time, on the host JVM, while SVM has substitutions for System. get/setProperty at
         // run-time which will never see those properties unless we also set them at run-time.
@@ -303,6 +290,21 @@ public class MainClassBuildStep {
 
         tryBlock = mv.tryBlock();
         tryBlock.invokeStaticMethod(CONFIGURE_STEP_TIME_START);
+
+        // Create Runtime Config and associate it with the current classloader
+        tryBlock.invokeStaticMethod(RunTimeConfigurationGenerator.C_CREATE_RUN_TIME_CONFIG, valueRegistry);
+
+        // Register RuntimeInfoProviders with ValueRegistry
+        for (ValueRegistryRuntimeInfoProviderBuildItem runtimeInfoProviderClass : runtimeInfoProviders) {
+            ResultHandle runtimeInfoProvider = tryBlock
+                    .newInstance(ofConstructor(runtimeInfoProviderClass.getRuntimeInfoProvider()));
+            tryBlock.invokeInterfaceMethod(
+                    ofMethod(RuntimeInfoProvider.class, "register", void.class, ValueRegistry.class, RuntimeSource.class),
+                    runtimeInfoProvider,
+                    valueRegistry,
+                    tryBlock.invokeStaticMethod(ofMethod(ConfigRuntimeSource.class, "runtimeSource", RuntimeSource.class)));
+        }
+
         for (MainBytecodeRecorderBuildItem holder : mainMethod) {
             writeRecordedBytecode(holder.getBytecodeRecorder(), holder.getGeneratedStartupContextClassName(), substitutions,
                     recordableConstructorBuildItems,
