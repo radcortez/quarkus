@@ -1229,7 +1229,7 @@ public class VertxHttpRecorder {
             this.startEventsFired = startEventsFired;
             this.httpBuildTimeConfig = httpBuildTimeConfig;
             this.valueRegistry = VertxHttpRecorder.valueRegistry != null ? VertxHttpRecorder.valueRegistry.getValue()
-                    : new ValueRegistryImpl.Builder().build();
+                    : ValueRegistryImpl.builder().build();
             if (CracSupport.isEnabled()) {
                 org.crac.Core.getGlobalContext().register(this);
             }
