@@ -2,7 +2,7 @@ package io.quarkus.test.component;
 
 import io.quarkus.arc.BeanCreator;
 import io.quarkus.arc.SyntheticCreationalContext;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public class ConfigMappingBeanCreator implements BeanCreator<Object> {
 
@@ -10,8 +10,7 @@ public class ConfigMappingBeanCreator implements BeanCreator<Object> {
     public Object create(SyntheticCreationalContext<Object> context) {
         String prefix = context.getParams().get("prefix").toString();
         Class<?> mappingClass = tryLoad(context.getParams().get("mappingClass").toString());
-        SmallRyeConfig config = ConfigBeanCreator.getConfig().unwrap(SmallRyeConfig.class);
-        return config.getConfigMapping(mappingClass, prefix);
+        return Config.get().getConfigMapping(mappingClass, prefix);
     }
 
     static Class<?> tryLoad(String name) {

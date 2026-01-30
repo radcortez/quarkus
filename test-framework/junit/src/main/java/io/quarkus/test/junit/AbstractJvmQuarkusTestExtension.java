@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.ServiceConfigurationError;
 import java.util.Set;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
@@ -18,7 +17,7 @@ import io.quarkus.bootstrap.app.RunningQuarkusApplication;
 import io.quarkus.deployment.dev.testing.TestConfig;
 import io.quarkus.runner.bootstrap.StartupActionImpl;
 import io.quarkus.test.junit.classloading.FacadeClassLoader;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public class AbstractJvmQuarkusTestExtension extends AbstractQuarkusTestWithContextExtension
         implements ExecutionCondition {
@@ -159,9 +158,7 @@ public class AbstractJvmQuarkusTestExtension extends AbstractQuarkusTestWithCont
 
         TestConfig testConfig;
         try {
-            testConfig = ConfigProvider.getConfig()
-                    .unwrap(SmallRyeConfig.class)
-                    .getConfigMapping(TestConfig.class);
+            testConfig = Config.get().getConfigMapping(TestConfig.class);
         } catch (Exception | ServiceConfigurationError e) {
             String javaCommand = System.getProperty("sun.java.command");
             boolean isEclipse = javaCommand != null

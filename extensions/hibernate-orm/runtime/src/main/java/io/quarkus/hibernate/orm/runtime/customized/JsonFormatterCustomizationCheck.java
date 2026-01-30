@@ -9,14 +9,13 @@ import java.util.function.Function;
 import jakarta.enterprise.inject.Instance;
 import jakarta.json.bind.Jsonb;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.arc.ArcContainer;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.jackson.ObjectMapperCustomizer;
 import io.quarkus.jsonb.JsonbConfigCustomizer;
+import io.smallrye.config.Config;
 
 /**
  * Test whether the underlying Jackson Object Mapper / JSON-B used to create the "built-in" format mapper
@@ -96,13 +95,13 @@ public interface JsonFormatterCustomizationCheck extends Function<ArcContainer, 
                     "quarkus.jackson.accept-case-insensitive-enums",
                     "enable the corresponding mapper feature, i.e. 'mapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)'",
                     "quarkus.jackson.timezone", "configure the mapper timezone, i.e. 'mapper.setTimeZone(yourTimezone)'");
-            for (String propertyName : ConfigProvider.getConfig().getPropertyNames()) {
+            for (String propertyName : Config.get().getPropertyNames()) {
                 if (propertyName.startsWith("quarkus.jackson.") && !acceptableConfigs.contains(propertyName)) {
                     String okValue = expectedDefaults.get(propertyName);
                     if (okValue != null && !okValue
-                            .equalsIgnoreCase(ConfigProvider.getConfig().getConfigValue(propertyName).getRawValue())) {
+                            .equalsIgnoreCase(Config.get().getConfigValue(propertyName).getRawValue())) {
                         causes.add("Detected '" + propertyName + "' property set to '"
-                                + ConfigProvider.getConfig().getConfigValue(propertyName).getRawValue() + "'. "
+                                + Config.get().getConfigValue(propertyName).getRawValue() + "'. "
                                 + "To make your custom ObjectMapper compatible with this configuration: "
                                 + actionsToTake.get(propertyName) + ".");
                     }

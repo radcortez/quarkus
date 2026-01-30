@@ -20,7 +20,6 @@ import java.util.StringJoiner;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.eclipse.microprofile.config.Config;
 import org.jboss.logging.Logger;
 
 import io.quarkus.bootstrap.classloading.MemoryClassPathElement;
@@ -39,7 +38,7 @@ import io.quarkus.paths.OpenPathTree;
 import io.quarkus.paths.PathCollection;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.util.ClassPathUtils;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 /**
  * A set of methods to initialize and execute {@link CodeGenProvider}s.
@@ -234,7 +233,7 @@ public class CodeGenerator {
                         allProps.put(name, ConfigTrackingValueTransformer.asString(config.getConfigValue(name)));
                     }
                     ConfigTrackingWriter.write(allProps,
-                            config.unwrap(SmallRyeConfig.class).getConfigMapping(ConfigTrackingConfig.class),
+                            config.getConfigMapping(ConfigTrackingConfig.class),
                             configReader.readConfiguration(config),
                             outputFile);
                     return null;
@@ -244,7 +243,7 @@ public class CodeGenerator {
             }
             return;
         }
-        Config config = null;
+        Config config;
         try {
             config = getConfig(appModel, mode, buildSystemProps, deploymentClassLoader);
         } catch (CodeGenException e) {

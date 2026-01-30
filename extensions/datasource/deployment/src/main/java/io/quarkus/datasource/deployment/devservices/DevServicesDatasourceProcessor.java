@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.quarkus.datasource.common.runtime.DataSourceUtil;
@@ -44,6 +43,7 @@ import io.quarkus.deployment.pkg.builditem.CurateOutcomeBuildItem;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.quarkus.runtime.configuration.ConfigurationException;
+import io.smallrye.config.Config;
 
 @BuildSteps(onlyIf = { IsDevServicesSupportedByLaunchMode.class, DevServicesConfig.Enabled.class })
 public class DevServicesDatasourceProcessor {
@@ -386,10 +386,11 @@ public class DevServicesDatasourceProcessor {
             logStart(datasource.id(), dataSourcePrettyName, defaultDbKind);
 
             List<String> devservicesPrefixes = DataSourceUtil.dataSourcePropertyKeys(dbName, "devservices.");
-            for (var name : ConfigProvider.getConfig().getPropertyNames()) {
+            Config config = Config.get();
+            for (var name : config.getPropertyNames()) {
                 for (String prefix : devservicesPrefixes) {
                     if (name.startsWith(prefix)) {
-                        devDebProperties.put(name, ConfigProvider.getConfig().getValue(name, String.class));
+                        devDebProperties.put(name, config.getValue(name, String.class));
                     }
                 }
             }

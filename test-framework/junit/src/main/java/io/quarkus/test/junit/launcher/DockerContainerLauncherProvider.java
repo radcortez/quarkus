@@ -17,8 +17,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.ServiceLoader;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.quarkus.deployment.dev.testing.TestConfig;
 import io.quarkus.deployment.images.ContainerImages;
 import io.quarkus.deployment.util.FileUtil;
@@ -26,7 +24,7 @@ import io.quarkus.test.common.ArtifactLauncher;
 import io.quarkus.test.common.DefaultDockerContainerLauncher;
 import io.quarkus.test.common.DockerContainerArtifactLauncher;
 import io.quarkus.test.common.TestConfigUtil;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public class DockerContainerLauncherProvider implements ArtifactLauncherProvider {
 
@@ -40,7 +38,7 @@ public class DockerContainerLauncherProvider implements ArtifactLauncherProvider
         String containerImage = context.quarkusArtifactProperties().getProperty("metadata.container-image");
         boolean pullRequired = Boolean
                 .parseBoolean(context.quarkusArtifactProperties().getProperty("metadata.pull-required", "false"));
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+        Config config = Config.get();
         if ((containerImage != null) && !containerImage.isEmpty()) {
             DockerContainerArtifactLauncher launcher;
             ServiceLoader<DockerContainerArtifactLauncher> loader = ServiceLoader.load(DockerContainerArtifactLauncher.class);
@@ -80,7 +78,7 @@ public class DockerContainerLauncherProvider implements ArtifactLauncherProvider
         }
     }
 
-    private void launcherInit(CreateContext context, DockerContainerArtifactLauncher launcher, SmallRyeConfig config,
+    private void launcherInit(CreateContext context, DockerContainerArtifactLauncher launcher, Config config,
             String containerImage, boolean pullRequired, Optional<String> entryPoint, Map<String, String> volumeMounts,
             List<String> programArgs) {
         TestConfig testConfig = config.getConfigMapping(TestConfig.class);
@@ -124,7 +122,7 @@ public class DockerContainerLauncherProvider implements ArtifactLauncherProvider
         programArgs.add(jarPath);
     }
 
-    private Map<Integer, Integer> additionalExposedPorts(SmallRyeConfig config) {
+    private Map<Integer, Integer> additionalExposedPorts(Config config) {
         try {
             return config.getValues("quarkus.test.container.additional-exposed-ports", Integer.class, Integer.class);
         } catch (NoSuchElementException e) {
@@ -132,7 +130,7 @@ public class DockerContainerLauncherProvider implements ArtifactLauncherProvider
         }
     }
 
-    private Map<String, String> volumeMounts(SmallRyeConfig config) {
+    private Map<String, String> volumeMounts(Config config) {
         try {
             return config.getValues("quarkus.test.container.volume-mounts", String.class, String.class);
         } catch (NoSuchElementException e) {
@@ -140,7 +138,7 @@ public class DockerContainerLauncherProvider implements ArtifactLauncherProvider
         }
     }
 
-    private Map<String, String> labels(SmallRyeConfig config) {
+    private Map<String, String> labels(Config config) {
         try {
             return config.getValues("quarkus.test.container.labels", String.class, String.class);
         } catch (NoSuchElementException e) {

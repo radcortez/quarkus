@@ -46,7 +46,6 @@ import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.spi.CDI;
 
 import org.crac.Resource;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -106,6 +105,7 @@ import io.quarkus.vertx.http.runtime.options.HttpServerOptionsUtils;
 import io.quarkus.vertx.http.runtime.options.TlsCertificateReloader;
 import io.smallrye.common.cpu.ProcessorInfo;
 import io.smallrye.common.vertx.VertxContext;
+import io.smallrye.config.Config;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.SmallRyeConfigBuilderCustomizer;
@@ -1470,7 +1470,7 @@ public class VertxHttpRecorder {
                 }
 
                 private URI localBaseUri(String scheme, int actualPort) {
-                    SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+                    Config config = Config.get();
                     String host = options.getHost();
                     if (host.equals("0.0.0.0")) {
                         host = "localhost";
@@ -1596,7 +1596,7 @@ public class VertxHttpRecorder {
 
                     private static HttpServerOptions createVirtualHttpServerOptions() {
                         var result = new HttpServerOptions();
-                        Optional<MemorySize> maybeMaxHeadersSize = ConfigProvider.getConfig()
+                        Optional<MemorySize> maybeMaxHeadersSize = Config.get()
                                 .getOptionalValue("quarkus.http.limits.max-header-size", MemorySize.class);
                         if (maybeMaxHeadersSize.isPresent()) {
                             result.setMaxHeaderSize(maybeMaxHeadersSize.get().asBigInteger().intValueExact());

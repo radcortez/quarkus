@@ -26,8 +26,6 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.transaction.Transaction;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget.Kind;
 import org.jboss.jandex.ClassInfo;
@@ -98,6 +96,7 @@ import io.quarkus.vertx.deployment.VertxBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
 import io.quarkus.vertx.http.deployment.VertxWebRouterBuildItem;
 import io.quarkus.vertx.http.runtime.security.SecurityHandlerPriorities;
+import io.smallrye.config.Config;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -549,7 +548,7 @@ public class GrpcServerProcessor {
     @BuildStep(onlyIf = IsProduction.class)
     KubernetesPortBuildItem registerGrpcServiceInKubernetes(List<BindableServiceBuildItem> bindables) {
         if (!bindables.isEmpty()) {
-            boolean useSeparateServer = ConfigProvider.getConfig().getOptionalValue("quarkus.grpc.server.use-separate-server",
+            boolean useSeparateServer = Config.get().getOptionalValue("quarkus.grpc.server.use-separate-server",
                     Boolean.class)
                     .orElse(true);
             if (useSeparateServer) {
@@ -789,7 +788,7 @@ public class GrpcServerProcessor {
 
     @BuildStep
     void registerSslResources(BuildProducer<NativeImageResourceBuildItem> resourceBuildItem) {
-        Config config = ConfigProvider.getConfig();
+        Config config = Config.get();
         for (String sslProperty : asList(CERTIFICATE, KEY, KEY_STORE, TRUST_STORE)) {
             config.getOptionalValue(sslProperty, String.class)
                     .ifPresent(value -> ResourceRegistrationUtils.registerResourceForProperty(resourceBuildItem, value));

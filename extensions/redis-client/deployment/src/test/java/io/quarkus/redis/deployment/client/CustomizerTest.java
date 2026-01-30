@@ -7,7 +7,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import org.assertj.core.api.Assertions;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.jupiter.api.Test;
@@ -18,6 +17,7 @@ import io.quarkus.redis.client.RedisOptionsCustomizer;
 import io.quarkus.redis.runtime.client.config.RedisConfig;
 import io.quarkus.test.QuarkusUnitTest;
 import io.quarkus.test.common.QuarkusTestResource;
+import io.smallrye.config.Config;
 import io.vertx.mutiny.redis.client.RedisAPI;
 import io.vertx.redis.client.RedisOptions;
 
@@ -50,7 +50,7 @@ public class CustomizerTest {
 
         @Override
         public void customize(String clientName, RedisOptions options) {
-            String v = ConfigProviderResolver.instance().getConfig().getValue("quarkus.redis.tr", String.class);
+            String v = Config.get().getValue("quarkus.redis.tr", String.class);
             if (clientName.equalsIgnoreCase("my-redis")
                     || clientName.equalsIgnoreCase(RedisConfig.DEFAULT_CLIENT_NAME)) {
                 options.setEndpoints(List.of(v));

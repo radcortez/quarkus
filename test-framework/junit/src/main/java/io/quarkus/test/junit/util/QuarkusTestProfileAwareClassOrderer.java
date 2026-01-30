@@ -8,8 +8,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.ClassDescriptor;
 import org.junit.jupiter.api.ClassOrderer;
 import org.junit.jupiter.api.ClassOrdererContext;
@@ -22,6 +20,7 @@ import io.quarkus.test.junit.QuarkusIntegrationTest;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.junit.main.QuarkusMainTest;
+import io.smallrye.config.Config;
 
 /**
  * A {@link ClassOrderer} that orders {@link QuarkusTest}, {@link QuarkusIntegrationTest} and {@link QuarkusMainTest} classes
@@ -81,7 +80,7 @@ public class QuarkusTestProfileAwareClassOrderer implements ClassOrderer {
     private final Optional<String> secondaryOrderer;
 
     public QuarkusTestProfileAwareClassOrderer() {
-        Config config = ConfigProvider.getConfig();
+        Config config = Config.get();
         this.prefixQuarkusTest = config.getOptionalValue(CFGKEY_ORDER_PREFIX_QUARKUS_TEST, String.class)
                 .orElse(DEFAULT_ORDER_PREFIX_QUARKUS_TEST);
         this.prefixQuarkusTestWithMatchingResource = config

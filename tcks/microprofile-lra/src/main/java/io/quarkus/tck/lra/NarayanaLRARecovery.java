@@ -19,7 +19,6 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package io.quarkus.tck.lra;
 
 import static io.narayana.lra.LRAConstants.RECOVERY_COORDINATOR_PATH_NAME;
@@ -36,12 +35,11 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.awaitility.core.ConditionTimeoutException;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.lra.tck.service.spi.LRARecoveryService;
 import org.jboss.logging.Logger;
 
 import io.narayana.lra.LRAConstants;
+import io.smallrye.config.Config;
 
 public class NarayanaLRARecovery implements LRARecoveryService {
     private static final Logger log = Logger.getLogger(NarayanaLRARecovery.class);
@@ -109,15 +107,6 @@ public class NarayanaLRARecovery implements LRARecoveryService {
     }
 
     private static Integer initWaitForCallbackTimeout() {
-        Config config = ConfigProvider.getConfig();
-        if (config != null) {
-            try {
-                return config.getOptionalValue(WAIT_CALLBACK_TIMEOUT_PROPERTY, Integer.class).orElse(DEFAULT_CALLBACK_TIMEOUT);
-            } catch (IllegalArgumentException e) {
-                log.error("property " + WAIT_CALLBACK_TIMEOUT_PROPERTY + " not set correctly, using the default value: "
-                        + DEFAULT_CALLBACK_TIMEOUT);
-            }
-        }
-        return DEFAULT_CALLBACK_TIMEOUT;
+        return Config.get().getOptionalValue(WAIT_CALLBACK_TIMEOUT_PROPERTY, Integer.class).orElse(DEFAULT_CALLBACK_TIMEOUT);
     }
 }

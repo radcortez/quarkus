@@ -50,8 +50,6 @@ import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 import org.wildfly.common.function.Functions;
 
@@ -106,6 +104,7 @@ import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import io.quarkus.runtime.util.HashUtil;
 import io.quarkus.value.registry.ValueRegistry;
+import io.smallrye.config.Config;
 import io.smallrye.config.ConfigMappings.ConfigClass;
 import io.smallrye.config.SmallRyeConfig;
 
@@ -209,11 +208,11 @@ public final class ExtensionLoader {
                     @Override
                     public ResultHandle load(final BytecodeCreator body, final Object obj, final boolean staticInit) {
                         ConfigClass mapping = mappingClasses.get(obj);
-                        MethodDescriptor getConfig = MethodDescriptor.ofMethod(ConfigProvider.class, "getConfig", Config.class);
-                        ResultHandle config = body.invokeStaticMethod(getConfig);
-                        MethodDescriptor getMapping = MethodDescriptor.ofMethod(SmallRyeConfig.class, "getConfigMapping",
+                        MethodDescriptor getConfig = MethodDescriptor.ofMethod(Config.class, "get", Config.class);
+                        ResultHandle config = body.invokeStaticInterfaceMethod(getConfig);
+                        MethodDescriptor getMapping = MethodDescriptor.ofMethod(Config.class, "getConfigMapping",
                                 Object.class, Class.class, String.class);
-                        return body.invokeVirtualMethod(getMapping, config, body.loadClass(mapping.getType()),
+                        return body.invokeInterfaceMethod(getMapping, config, body.loadClass(mapping.getType()),
                                 body.load(mapping.getPrefix()));
                     }
 
@@ -288,7 +287,7 @@ public final class ExtensionLoader {
             throw reportError(clazz, "Build step classes must have exactly one constructor");
         }
 
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+        Config config = Config.get();
         ExtensionLoaderConfig extensionLoaderConfig = config.getConfigMapping(ExtensionLoaderConfig.class);
         EnumSet<ConfigPhase> consumingConfigPhases = EnumSet.noneOf(ConfigPhase.class);
 

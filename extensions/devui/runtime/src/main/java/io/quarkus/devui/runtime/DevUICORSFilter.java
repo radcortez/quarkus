@@ -9,12 +9,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.quarkus.vertx.http.runtime.cors.CORSConfig;
 import io.quarkus.vertx.http.runtime.cors.CORSFilter;
 import io.quarkus.vertx.http.security.CORS;
+import io.smallrye.config.Config;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerRequest;
@@ -107,8 +107,8 @@ public class DevUICORSFilter implements Handler<RoutingContext> {
 
     private CORSConfig getBaseCorsConfig() {
         if (baseCorsConfig == null) {
-            int httpPort = ConfigProvider.getConfig().getValue(HTTP_PORT_CONFIG_PROP, int.class);
-            int httpsPort = ConfigProvider.getConfig().getValue(HTTPS_PORT_CONFIG_PROP, int.class);
+            int httpPort = Config.get().getValue(HTTP_PORT_CONFIG_PROP, int.class);
+            int httpsPort = Config.get().getValue(HTTPS_PORT_CONFIG_PROP, int.class);
             baseCorsConfig = (CORSConfig) CORS.origins(Set.of(
                     HTTP_LOCAL_HOST + ":" + httpPort,
                     HTTPS_LOCAL_HOST + ":" + httpsPort,

@@ -12,8 +12,6 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.ws.rs.client.ClientRequestContext;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.quarkus.arc.Arc;
 import io.quarkus.oidc.client.OidcClient;
 import io.quarkus.oidc.client.OidcClients;
@@ -24,6 +22,7 @@ import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.security.credential.TokenCredential;
 import io.quarkus.security.spi.runtime.MethodDescription;
 import io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle;
+import io.smallrye.config.Config;
 import io.vertx.core.Vertx;
 
 public class AccessTokenRequestFilter extends AbstractTokenRequestFilter {
@@ -50,7 +49,7 @@ public class AccessTokenRequestFilter extends AbstractTokenRequestFilter {
             OidcClients clients = Arc.container().instance(OidcClients.class).get();
             String clientName = getClientName();
             exchangeTokenClient = clientName != null ? clients.getClient(clientName) : clients.getClient();
-            Grant.Type exchangeTokenGrantType = ConfigProvider.getConfig()
+            Grant.Type exchangeTokenGrantType = Config.get()
                     .getValue(
                             "quarkus.oidc-client." + (clientName != null ? clientName + "." : "")
                                     + "grant.type",
@@ -67,8 +66,7 @@ public class AccessTokenRequestFilter extends AbstractTokenRequestFilter {
     }
 
     protected boolean isExchangeToken() {
-        return ConfigProvider.getConfig().getValue("quarkus.resteasy-client-oidc-token-propagation.exchange-token",
-                boolean.class);
+        return Config.get().getValue("quarkus.resteasy-client-oidc-token-propagation.exchange-token", boolean.class);
     }
 
     @Override
@@ -97,8 +95,7 @@ public class AccessTokenRequestFilter extends AbstractTokenRequestFilter {
     }
 
     protected String getClientName() {
-        return ConfigProvider.getConfig()
-                .getOptionalValue("quarkus.resteasy-client-oidc-token-propagation.client-name", String.class)
+        return Config.get().getOptionalValue("quarkus.resteasy-client-oidc-token-propagation.client-name", String.class)
                 .orElse(null);
     }
 

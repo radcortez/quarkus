@@ -3,6 +3,7 @@ package io.quarkus.test.config;
 import org.junit.jupiter.api.extension.Extension;
 
 import io.quarkus.runtime.logging.LoggingSetupRecorder;
+import io.smallrye.config.Config;
 
 /**
  * A global JUnit extension that enables/sets up basic logging if logging has not already been set up.
@@ -12,6 +13,8 @@ import io.quarkus.runtime.logging.LoggingSetupRecorder;
  */
 public class LoggingSetupExtension implements Extension {
     public LoggingSetupExtension() {
+        // TODO - radcortez - Register config directly instead of relying in automatic creation
+        Config.getOrCreate();
         LoggingSetupRecorder.handleFailedStart();
     }
 }

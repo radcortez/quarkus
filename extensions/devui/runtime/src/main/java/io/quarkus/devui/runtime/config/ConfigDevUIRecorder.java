@@ -10,13 +10,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import io.quarkus.runtime.annotations.Recorder;
 import io.quarkus.vertx.http.runtime.devmode.ConfigDescription;
-import io.smallrye.config.ConfigValue;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 @Recorder
 public class ConfigDevUIRecorder {
@@ -45,11 +43,11 @@ public class ConfigDevUIRecorder {
 
         List<ConfigDescription> ordered = new ArrayList<>();
         List<String> properties = new ArrayList<>();
-        SmallRyeConfig current = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+        Config config = Config.get();
 
         Map<List<String>, Set<String>> allPropertySegments = new HashMap<>();
         Set<String> propertyNames = new HashSet<>();
-        current.getPropertyNames().forEach(propertyNames::add);
+        config.getPropertyNames().forEach(propertyNames::add);
         for (String propertyName : propertyNames) {
             propertyName = propertyName.replace(QUOTED_DOT, QUOTED_DOT_KEY); // Make sure dots can be quoted
             String[] parts = propertyName.split("\\.");
@@ -103,7 +101,7 @@ public class ConfigDevUIRecorder {
                     }
                 }
                 properties.add(item.getName());
-                item.setConfigValue(getConfigValue(current, item.getName()));
+                item.setConfigValue(config.getConfigValue(item.getName()));
                 ordered.add(item);
             } else if (!item.getName().startsWith("quarkus.log.filter")) { //special case, we use this internally and we don't want it clogging up the editor
                 //we need to figure out how to expand it
@@ -184,7 +182,7 @@ public class ConfigDevUIRecorder {
                     item.getConfigPhase());
 
             properties.add(newDesc.getName());
-            newDesc.setConfigValue(getConfigValue(current, newDesc.getName()));
+            newDesc.setConfigValue(config.getConfigValue(newDesc.getName()));
             ordered.add(newDesc);
         }
 
@@ -210,23 +208,23 @@ public class ConfigDevUIRecorder {
             ConfigDescription newDesc = new ConfigDescription(expandedName, true);
 
             properties.add(newDesc.getName());
-            newDesc.setConfigValue(getConfigValue(current, newDesc.getName()));
+            newDesc.setConfigValue(config.getConfigValue(newDesc.getName()));
             ordered.add(newDesc);
         }
 
-        for (ConfigSource configSource : current.getConfigSources()) {
+        for (ConfigSource configSource : config.getConfigSources()) {
             if (configSource.getName().equals("PropertiesConfigSource[source=Build system]")) {
                 properties.addAll(configSource.getPropertyNames());
             }
         }
 
         withoutExpansion(() -> {
-            for (String propertyName : current.getPropertyNames()) {
+            for (String propertyName : config.getPropertyNames()) {
                 if (properties.contains(propertyName)) {
                     continue;
                 }
 
-                ConfigDescription item = new ConfigDescription(propertyName, null, null, getConfigValue(current, propertyName));
+                ConfigDescription item = new ConfigDescription(propertyName, null, null, config.getConfigValue(propertyName));
                 ordered.add(item);
 
                 configDescriptions.add(item);
@@ -234,14 +232,6 @@ public class ConfigDevUIRecorder {
         });
 
         return ordered;
-    }
-
-    private ConfigValue getConfigValue(SmallRyeConfig config, String name) {
-        try {
-            return config.getConfigValue(name);
-        } catch (java.util.NoSuchElementException nse) {
-            return null;
-        }
     }
 
     private String ensureQuoted(String part) {

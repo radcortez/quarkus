@@ -6,14 +6,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.quarkus.oidc.common.runtime.OidcCommonUtils;
 import io.quarkus.oidc.common.runtime.OidcConstants;
 import io.quarkus.oidc.runtime.OidcTenantConfig.Provider;
 import io.quarkus.oidc.runtime.providers.KnownOidcProviders;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public class OidcConfigPropertySupplier implements Supplier<String> {
     private static final String AUTH_SERVER_URL_CONFIG_KEY = "quarkus.oidc.auth-server-url";
@@ -49,7 +46,7 @@ public class OidcConfigPropertySupplier implements Supplier<String> {
 
     @Override
     public String get() {
-        return get(ConfigProvider.getConfig());
+        return get(Config.get());
     }
 
     private String checkUrlProperty(Optional<String> value, OidcTenantConfig providerConfig, Config config) {
@@ -123,17 +120,15 @@ public class OidcConfigPropertySupplier implements Supplier<String> {
             }
         } else if (AUTH_EXTRA_PARAMS_KEY.equals(oidcConfigProperty)) {
             StringBuilder sb = new StringBuilder();
-            if (config instanceof SmallRyeConfig) {
-                Optional<Map<String, String>> extraParams = ((SmallRyeConfig) config).getOptionalValues(oidcConfigProperty,
-                        String.class,
-                        String.class);
-                if (extraParams.isPresent()) {
-                    for (Map.Entry<String, String> entry : extraParams.get().entrySet()) {
-                        if (entry.getKey().equals(OidcConstants.TOKEN_SCOPE)) {
-                            continue;
-                        }
-                        sb.append("&").append(entry.getKey()).append("=").append(OidcCommonUtils.urlEncode(entry.getValue()));
+            Optional<Map<String, String>> extraParams = config.getOptionalValues(oidcConfigProperty,
+                    String.class,
+                    String.class);
+            if (extraParams.isPresent()) {
+                for (Map.Entry<String, String> entry : extraParams.get().entrySet()) {
+                    if (entry.getKey().equals(OidcConstants.TOKEN_SCOPE)) {
+                        continue;
                     }
+                    sb.append("&").append(entry.getKey()).append("=").append(OidcCommonUtils.urlEncode(entry.getValue()));
                 }
             }
             return sb.toString();

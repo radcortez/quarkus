@@ -22,11 +22,10 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.quarkus.runtime.logging.LogRuntimeConfig;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public class DefaultNativeImageLauncher implements NativeImageLauncher {
     private static final Logger log = Logger.getLogger(DefaultNativeImageLauncher.class);
@@ -84,8 +83,7 @@ public class DefaultNativeImageLauncher implements NativeImageLauncher {
     @Override
     public Optional<ListeningAddress> start() throws IOException {
         start(new String[0], true);
-        LogRuntimeConfig logRuntimeConfig = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class)
-                .getConfigMapping(LogRuntimeConfig.class);
+        LogRuntimeConfig logRuntimeConfig = Config.get().getConfigMapping(LogRuntimeConfig.class);
         logFile = logRuntimeConfig.file().path().toPath();
         Function<IntegrationTestStartedNotifier.Context, IntegrationTestStartedNotifier.Result> startedFunction = createStartedFunction();
         if (startedFunction != null) {
@@ -97,9 +95,7 @@ public class DefaultNativeImageLauncher implements NativeImageLauncher {
     }
 
     public void start(String[] programArgs, boolean handleIo) throws IOException {
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
-        LogRuntimeConfig logRuntimeConfig = config.getConfigMapping(LogRuntimeConfig.class);
-
+        LogRuntimeConfig logRuntimeConfig = Config.get().getConfigMapping(LogRuntimeConfig.class);
         if (nativeImagePath == null) {
             nativeImagePath = guessPath(testClass);
         }

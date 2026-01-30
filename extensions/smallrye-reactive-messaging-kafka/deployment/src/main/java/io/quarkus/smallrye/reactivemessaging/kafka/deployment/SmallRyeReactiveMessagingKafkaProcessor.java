@@ -16,8 +16,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.ConfigValue;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
@@ -52,6 +50,7 @@ import io.quarkus.smallrye.reactivemessaging.kafka.HibernateOrmStateStore;
 import io.quarkus.smallrye.reactivemessaging.kafka.HibernateReactiveStateStore;
 import io.quarkus.smallrye.reactivemessaging.kafka.KafkaConfigCustomizer;
 import io.quarkus.smallrye.reactivemessaging.kafka.RedisStateStore;
+import io.smallrye.config.Config;
 import io.smallrye.mutiny.tuples.Functions.TriConsumer;
 import io.smallrye.reactive.messaging.kafka.KafkaConnector;
 import io.smallrye.reactive.messaging.kafka.commit.ProcessingState;
@@ -128,8 +127,9 @@ public class SmallRyeReactiveMessagingKafkaProcessor {
     public void checkpointRedis(BuildProducer<AdditionalBeanBuildItem> additionalBean,
             BuildProducer<ReflectiveClassBuildItem> reflectiveClass,
             Capabilities capabilities) {
-        if (hasStateStoreConfig(REDIS_STATE_STORE, ConfigProvider.getConfig())) {
-            Optional<String> checkpointStateType = getConnectorProperty("checkpoint.state-type", ConfigProvider.getConfig());
+        if (hasStateStoreConfig(REDIS_STATE_STORE, io.smallrye.config.Config.get())) {
+            Optional<String> checkpointStateType = getConnectorProperty("checkpoint.state-type",
+                    io.smallrye.config.Config.get());
             checkpointStateType.ifPresent(
                     s -> reflectiveClass.produce(ReflectiveClassBuildItem.builder(s)
                             .reason(getClass().getName())
@@ -145,7 +145,7 @@ public class SmallRyeReactiveMessagingKafkaProcessor {
 
     @BuildStep
     public void checkpointHibernateReactive(BuildProducer<AdditionalBeanBuildItem> additionalBean, Capabilities capabilities) {
-        if (hasStateStoreConfig(HIBERNATE_REACTIVE_STATE_STORE, ConfigProvider.getConfig())) {
+        if (hasStateStoreConfig(HIBERNATE_REACTIVE_STATE_STORE, io.smallrye.config.Config.get())) {
             if (capabilities.isPresent(Capability.HIBERNATE_REACTIVE)) {
                 additionalBean.produce(new AdditionalBeanBuildItem(HibernateReactiveStateStore.Factory.class));
             } else {
@@ -156,7 +156,7 @@ public class SmallRyeReactiveMessagingKafkaProcessor {
 
     @BuildStep
     public void checkpointHibernateOrm(BuildProducer<AdditionalBeanBuildItem> additionalBean, Capabilities capabilities) {
-        if (hasStateStoreConfig(HIBERNATE_ORM_STATE_STORE, ConfigProvider.getConfig())) {
+        if (hasStateStoreConfig(HIBERNATE_ORM_STATE_STORE, io.smallrye.config.Config.get())) {
             if (capabilities.isPresent(Capability.HIBERNATE_ORM)) {
                 additionalBean.produce(new AdditionalBeanBuildItem(HibernateOrmStateStore.Factory.class));
             } else {
@@ -1024,7 +1024,7 @@ public class SmallRyeReactiveMessagingKafkaProcessor {
     public void reflectiveValueSerializerPayload(CombinedIndexBuildItem combinedIndex,
             BuildProducer<ReflectiveClassBuildItem> reflectiveClass) {
         IndexView index = combinedIndex.getIndex();
-        Config config = ConfigProvider.getConfig();
+        Config config = io.smallrye.config.Config.get();
 
         processOutgoingForReflectiveClassPayload(index, config,
                 (annotation, payloadType) -> produceReflectiveClass(reflectiveClass, payloadType));

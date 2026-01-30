@@ -12,12 +12,10 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -30,8 +28,6 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logmanager.ExtFormatter;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
@@ -59,7 +55,6 @@ import io.quarkus.runtime.ImageMode;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
-import io.quarkus.runtime.configuration.QuarkusConfigBuilderCustomizer;
 import io.quarkus.runtime.console.ConsoleRuntimeConfig;
 import io.quarkus.runtime.logging.LogBuildTimeConfig.CategoryBuildTimeConfig;
 import io.quarkus.runtime.logging.LogRuntimeConfig.CategoryConfig;
@@ -68,8 +63,7 @@ import io.quarkus.runtime.logging.LogRuntimeConfig.ConsoleConfig;
 import io.quarkus.runtime.logging.LogRuntimeConfig.FileConfig;
 import io.quarkus.runtime.logging.LogRuntimeConfig.SocketConfig;
 import io.quarkus.runtime.shutdown.ShutdownListener;
-import io.smallrye.config.SmallRyeConfig;
-import io.smallrye.config.SmallRyeConfigBuilder;
+import io.smallrye.config.Config;
 
 @Recorder
 public class LoggingSetupRecorder {
@@ -94,35 +88,10 @@ public class LoggingSetupRecorder {
     }
 
     public static void handleFailedStart(RuntimeValue<Optional<Supplier<String>>> banner) {
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
-        // There may be cases where a Config with the mappings is already available, but we can't be sure, so we wrap
-        // the original Config and map the logging classes.
-        SmallRyeConfig loggingConfig = new SmallRyeConfigBuilder()
-                .withCustomizers(new QuarkusConfigBuilderCustomizer())
-                .withMapping(LogBuildTimeConfig.class)
-                .withMapping(LogRuntimeConfig.class)
-                .withMapping(ConsoleRuntimeConfig.class)
-                .withSources(new ConfigSource() {
-                    @Override
-                    public Set<String> getPropertyNames() {
-                        Set<String> properties = new HashSet<>();
-                        config.getPropertyNames().forEach(properties::add);
-                        return properties;
-                    }
-
-                    @Override
-                    public String getValue(final String propertyName) {
-                        return config.getConfigValue(propertyName).getValue();
-                    }
-
-                    @Override
-                    public String getName() {
-                        return "Logging Config";
-                    }
-                }).build();
-        LogBuildTimeConfig logBuildTimeConfig = loggingConfig.getConfigMapping(LogBuildTimeConfig.class);
-        LogRuntimeConfig logRuntimeConfig = loggingConfig.getConfigMapping(LogRuntimeConfig.class);
-        ConsoleRuntimeConfig consoleRuntimeConfig = loggingConfig.getConfigMapping(ConsoleRuntimeConfig.class);
+        Config config = Config.get();
+        LogBuildTimeConfig logBuildTimeConfig = config.getConfigMapping(LogBuildTimeConfig.class);
+        LogRuntimeConfig logRuntimeConfig = config.getConfigMapping(LogRuntimeConfig.class);
+        ConsoleRuntimeConfig consoleRuntimeConfig = config.getConfigMapping(ConsoleRuntimeConfig.class);
         new LoggingSetupRecorder(logBuildTimeConfig, new RuntimeValue<>(logRuntimeConfig),
                 new RuntimeValue<>(consoleRuntimeConfig)).initializeLogging(
                         DiscoveredLogComponents.ofEmpty(), emptyMap(), false, null, emptyList(), emptyList(), emptyList(),

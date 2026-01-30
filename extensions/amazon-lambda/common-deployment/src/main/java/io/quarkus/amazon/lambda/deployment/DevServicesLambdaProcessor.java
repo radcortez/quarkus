@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.quarkus.amazon.lambda.runtime.AmazonLambdaApi;
@@ -26,6 +25,7 @@ import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.deployment.builditem.ServiceStartBuildItem;
 import io.quarkus.deployment.builditem.Startable;
 import io.quarkus.runtime.LaunchMode;
+import io.smallrye.config.Config;
 
 public class DevServicesLambdaProcessor {
     private static final Logger log = Logger.getLogger(DevServicesLambdaProcessor.class);
@@ -111,7 +111,7 @@ public class DevServicesLambdaProcessor {
             // However, we won't get defaults, so we need to fill our own in
             int port = isTest ? Integer.parseInt(MockEventServerConfig.TEST_PORT)
                     : Integer.parseInt(MockEventServerConfig.DEV_PORT);
-            int configuredPort = ConfigProvider.getConfig().getOptionalValue(propName, Integer.class)
+            int configuredPort = Config.get().getOptionalValue(propName, Integer.class)
                     .or(() -> Optional.of(port))
                     .get();
 

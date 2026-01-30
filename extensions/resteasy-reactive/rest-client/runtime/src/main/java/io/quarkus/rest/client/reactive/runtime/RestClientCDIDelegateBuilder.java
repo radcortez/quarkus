@@ -24,7 +24,6 @@ import java.util.function.Function;
 
 import javax.net.ssl.HostnameVerifier;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.rest.client.ext.QueryParamStyle;
 import org.jboss.resteasy.reactive.client.api.LoggingScope;
 import org.jboss.resteasy.reactive.client.api.QuarkusRestClientProperties;
@@ -39,7 +38,7 @@ import io.quarkus.restclient.config.RestClientsConfig.RestClientConfig;
 import io.quarkus.runtime.configuration.MemorySize;
 import io.quarkus.tls.TlsConfiguration;
 import io.quarkus.tls.TlsConfigurationRegistry;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 import io.vertx.core.http.HttpClientOptions;
 
 public class RestClientCDIDelegateBuilder<T> {
@@ -59,8 +58,7 @@ public class RestClientCDIDelegateBuilder<T> {
     }
 
     private RestClientCDIDelegateBuilder(Class<T> jaxrsInterface, String baseUriFromAnnotation, String configKey) {
-        this(jaxrsInterface, baseUriFromAnnotation, configKey,
-                ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getConfigMapping(RestClientsConfig.class));
+        this(jaxrsInterface, baseUriFromAnnotation, configKey, Config.get().getConfigMapping(RestClientsConfig.class));
     }
 
     RestClientCDIDelegateBuilder(Class<T> jaxrsInterface, String baseUriFromAnnotation, String configKey,

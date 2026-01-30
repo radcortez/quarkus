@@ -4,12 +4,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.config.ConfigValue;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
+import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
 /**
@@ -45,7 +43,7 @@ public final class ConfigUtils {
      * @see io.smallrye.config.SmallRyeConfig#getProfiles()
      */
     public static List<String> getProfiles() {
-        return ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getProfiles();
+        return Config.get().getProfiles();
     }
 
     /**
@@ -72,7 +70,7 @@ public final class ConfigUtils {
      * @return true if the property is present or false otherwise.
      */
     public static boolean isPropertyPresent(String propertyName) {
-        return ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).isPropertyPresent(propertyName);
+        return Config.get().isPropertyPresent(propertyName);
     }
 
     /**
@@ -84,7 +82,7 @@ public final class ConfigUtils {
      * @return true if the property is present or false otherwise.
      */
     public static boolean isPropertyNonEmpty(String propertyName) {
-        ConfigValue configValue = ConfigProvider.getConfig().getConfigValue(propertyName);
+        ConfigValue configValue = Config.get().getConfigValue(propertyName);
         return configValue.getValue() != null && !configValue.getValue().isEmpty();
     }
 
@@ -120,7 +118,7 @@ public final class ConfigUtils {
      * @return true if the property is present or false otherwise.
      */
     public static <T> Optional<T> getFirstOptionalValue(List<String> propertyNames, Class<T> propertyType) {
-        Config config = ConfigProvider.getConfig();
+        Config config = Config.get();
         for (String propertyName : propertyNames) {
             Optional<T> value = config.getOptionalValue(propertyName, propertyType);
             if (value.isPresent()) {

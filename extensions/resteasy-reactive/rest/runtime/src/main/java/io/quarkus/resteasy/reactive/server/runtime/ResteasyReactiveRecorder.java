@@ -24,7 +24,6 @@ import java.util.function.Supplier;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.resteasy.reactive.common.core.SingletonBeanFactory;
 import org.jboss.resteasy.reactive.common.model.ResourceContextResolver;
 import org.jboss.resteasy.reactive.common.model.ResourceExceptionMapper;
@@ -80,6 +79,7 @@ import io.quarkus.vertx.http.runtime.devmode.RouteMethodDescription;
 import io.quarkus.vertx.http.runtime.security.HttpSecurityRecorder.DefaultAuthFailureHandler;
 import io.quarkus.vertx.http.runtime.security.QuarkusHttpUser;
 import io.quarkus.virtual.threads.VirtualThreadsRecorder;
+import io.smallrye.config.Config;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 
@@ -352,7 +352,7 @@ public class ResteasyReactiveRecorder extends ResteasyReactiveCommonRecorder imp
         return new Supplier<>() {
             @Override
             public Boolean get() {
-                String value = ConfigProvider.getConfig().getConfigValue(propertyName).getValue();
+                String value = Config.get().getConfigValue(propertyName).getValue();
                 if (value == null) {
                     return disableIfMissing;
                 } else {

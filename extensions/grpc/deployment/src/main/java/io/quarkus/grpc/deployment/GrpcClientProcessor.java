@@ -25,8 +25,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.inject.Singleton;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationTarget.Kind;
@@ -84,6 +82,7 @@ import io.quarkus.grpc.runtime.stork.VertxStorkMeasuringGrpcInterceptor;
 import io.quarkus.grpc.runtime.supports.Channels;
 import io.quarkus.grpc.runtime.supports.GrpcClientConfigProvider;
 import io.quarkus.grpc.runtime.supports.IOThreadClientInterceptor;
+import io.smallrye.config.Config;
 
 public class GrpcClientProcessor {
 
@@ -290,7 +289,7 @@ public class GrpcClientProcessor {
 
     @BuildStep
     void registerSslResources(BuildProducer<NativeImageResourceBuildItem> resourceBuildItem) {
-        Config config = ConfigProvider.getConfig();
+        Config config = Config.get();
         registerResourcesForProperties(config, resourceBuildItem, TRUST_STORE_PATTERN, CERTIFICATE_PATTERN, KEY_PATTERN);
     }
 

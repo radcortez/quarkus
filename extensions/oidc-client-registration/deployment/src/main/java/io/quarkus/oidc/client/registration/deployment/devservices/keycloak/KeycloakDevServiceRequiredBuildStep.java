@@ -3,7 +3,6 @@ package io.quarkus.oidc.client.registration.deployment.devservices.keycloak;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -18,6 +17,7 @@ import io.quarkus.devservices.keycloak.KeycloakDevServicesConfigurator;
 import io.quarkus.devservices.keycloak.KeycloakDevServicesRequiredBuildItem;
 import io.quarkus.devui.spi.page.CardPageBuildItem;
 import io.quarkus.oidc.client.registration.deployment.OidcClientRegistrationBuildStep;
+import io.smallrye.config.Config;
 
 @BuildSteps(onlyIf = { IsDevServicesSupportedByLaunchMode.class, OidcClientRegistrationBuildStep.IsEnabled.class,
         DevServicesConfig.Enabled.class })
@@ -62,7 +62,6 @@ public class KeycloakDevServiceRequiredBuildStep {
     }
 
     private static String getInitialToken() {
-        return ConfigProvider.getConfig().getOptionalValue("quarkus.oidc-client-registration.initial-token", String.class)
-                .orElse(null);
+        return Config.get().getOptionalValue("quarkus.oidc-client-registration.initial-token", String.class).orElse(null);
     }
 }

@@ -17,11 +17,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.quarkus.runtime.logging.LogRuntimeConfig;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public class DefaultJarLauncher implements JarArtifactLauncher {
     private static final Logger log = Logger.getLogger(DefaultJarLauncher.class);
@@ -72,8 +71,7 @@ public class DefaultJarLauncher implements JarArtifactLauncher {
     public Optional<ListeningAddress> start() throws IOException {
         start(new String[0], true);
         Function<IntegrationTestStartedNotifier.Context, IntegrationTestStartedNotifier.Result> startedFunction = createStartedFunction();
-        LogRuntimeConfig logRuntimeConfig = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class)
-                .getConfigMapping(LogRuntimeConfig.class);
+        LogRuntimeConfig logRuntimeConfig = Config.get().getConfigMapping(LogRuntimeConfig.class);
         logFile = logRuntimeConfig.file().path().toPath();
         if (startedFunction != null) {
             waitForStartedFunction(startedFunction, quarkusProcess, waitTimeSeconds, logFile);
@@ -102,8 +100,7 @@ public class DefaultJarLauncher implements JarArtifactLauncher {
     }
 
     public void start(String[] programArgs, boolean handleIo) throws IOException {
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
-        LogRuntimeConfig logRuntimeConfig = config.getConfigMapping(LogRuntimeConfig.class);
+        LogRuntimeConfig logRuntimeConfig = Config.get().getConfigMapping(LogRuntimeConfig.class);
         logFile = logRuntimeConfig.file().path().toPath();
 
         List<String> args = new ArrayList<>();

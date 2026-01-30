@@ -30,6 +30,7 @@ import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import io.quarkus.test.common.TestResourceScope;
 import io.quarkus.test.common.WithTestResource;
+import io.quarkus.test.config.LoggingSetupExtension;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
@@ -39,6 +40,7 @@ import io.quarkus.test.junit.util.dummyclasses.Test09;
 import io.quarkus.test.junit.util.dummyclasses.Test10;
 
 @ExtendWith(MockitoExtension.class)
+@ExtendWith(LoggingSetupExtension.class)
 class QuarkusTestProfileAwareClassOrdererTest {
 
     @Mock

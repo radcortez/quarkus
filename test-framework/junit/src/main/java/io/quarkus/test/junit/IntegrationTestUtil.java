@@ -30,7 +30,6 @@ import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Inject;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.jandex.Index;
@@ -60,7 +59,7 @@ import io.quarkus.test.common.TestClassIndexer;
 import io.quarkus.test.common.TestResourceManager;
 import io.quarkus.test.common.http.TestHTTPResourceManager;
 import io.smallrye.common.process.ProcessBuilder;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public final class IntegrationTestUtil {
 
@@ -149,7 +148,7 @@ public final class IntegrationTestUtil {
             properties.put("quarkus.config.build-time-mismatch-at-runtime", "fail");
         }
         // recalculate the property names that may have changed
-        ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
+        Config.get().getLatestPropertyNames();
         return new TestProfileAndProperties(testProfile, properties);
     }
 
@@ -286,8 +285,7 @@ public final class IntegrationTestUtil {
         if (isDockerAppLaunch) {
             if (networkId == null) {
                 // use the network the use has specified or else just generate one if none is configured
-                Optional<String> networkIdOpt = ConfigProvider.getConfig().getOptionalValue(
-                        "quarkus.test.container.network", String.class);
+                Optional<String> networkIdOpt = Config.get().getOptionalValue("quarkus.test.container.network", String.class);
                 if (networkIdOpt.isPresent()) {
                     networkId = networkIdOpt.get();
                 } else {
@@ -418,7 +416,7 @@ public final class IntegrationTestUtil {
         }
     }
 
-    static String getEffectiveArtifactType(Properties quarkusArtifactProperties, SmallRyeConfig config) {
+    static String getEffectiveArtifactType(Properties quarkusArtifactProperties, Config config) {
         Optional<String> maybeType = config.getOptionalValue("quarkus.test.integration-test-artifact-type", String.class);
         if (maybeType.isPresent()) {
             return maybeType.get();

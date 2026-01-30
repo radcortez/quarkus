@@ -26,7 +26,6 @@ import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
 import org.assertj.core.api.Assert;
 import org.assertj.core.groups.Tuple;
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -49,8 +48,8 @@ import io.quarkus.deployment.builditem.RunTimeConfigurationDefaultBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.kafka.client.serialization.JsonbSerializer;
 import io.quarkus.kafka.client.serialization.ObjectMapperDeserializer;
-import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import io.quarkus.smallrye.reactivemessaging.deployment.items.ConnectorManagedChannelBuildItem;
+import io.smallrye.config.Config;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.common.MapBackedConfigSource;
 import io.smallrye.mutiny.Multi;
@@ -105,45 +104,38 @@ public class DefaultSerdeConfigTest {
                 return true;
             }
         };
-        try {
-            new SmallRyeReactiveMessagingKafkaProcessor().discoverDefaultSerdeConfig(discovery, Collections.emptyList(),
-                    configs::add,
-                    (generatedNames == null) ? null : generated::add,
-                    (reflectiveNames == null) ? null : reflective::add);
+        new SmallRyeReactiveMessagingKafkaProcessor().discoverDefaultSerdeConfig(discovery, Collections.emptyList(),
+                configs::add,
+                (generatedNames == null) ? null : generated::add,
+                (reflectiveNames == null) ? null : reflective::add);
 
-            assertThat(configs)
-                    .extracting(RunTimeConfigurationDefaultBuildItem::getKey, RunTimeConfigurationDefaultBuildItem::getValue)
-                    .hasSize(expectations.length)
-                    .allSatisfy(tuple -> {
-                        Object[] e = tuple.toArray();
-                        String key = (String) e[0];
-                        String value = (String) e[1];
-                        assertThat(Arrays.stream(expectations).filter(t -> key.equals(t.toArray()[0])))
-                                .hasSize(1)
-                                .satisfiesOnlyOnce(t -> {
-                                    Object o = t.toArray()[1];
-                                    if (o instanceof String) {
-                                        assertThat(value).isEqualTo((String) o);
-                                    } else {
-                                        ((Function<String, Assert>) o).apply(value);
-                                    }
-                                });
-                    });
+        assertThat(configs)
+                .extracting(RunTimeConfigurationDefaultBuildItem::getKey, RunTimeConfigurationDefaultBuildItem::getValue)
+                .hasSize(expectations.length)
+                .allSatisfy(tuple -> {
+                    Object[] e = tuple.toArray();
+                    String key = (String) e[0];
+                    String value = (String) e[1];
+                    assertThat(Arrays.stream(expectations).filter(t -> key.equals(t.toArray()[0])))
+                            .hasSize(1)
+                            .satisfiesOnlyOnce(t -> {
+                                Object o = t.toArray()[1];
+                                if (o instanceof String) {
+                                    assertThat(value).isEqualTo((String) o);
+                                } else {
+                                    ((Function<String, Assert>) o).apply(value);
+                                }
+                            });
+                });
 
-            assertThat(generated)
-                    .extracting(GeneratedClassBuildItem::internalName)
-                    .allSatisfy(s -> assertThat(generatedNames).satisfiesOnlyOnce(c -> c.apply(s)));
+        assertThat(generated)
+                .extracting(GeneratedClassBuildItem::internalName)
+                .allSatisfy(s -> assertThat(generatedNames).satisfiesOnlyOnce(c -> c.apply(s)));
 
-            assertThat(reflective)
-                    .flatExtracting(ReflectiveClassBuildItem::getClassNames)
-                    .extracting(n -> n.replace('/', '.'))
-                    .allSatisfy(s -> assertThat(reflectiveNames).satisfiesOnlyOnce(c -> c.apply(s)));
-        } finally {
-            // must not leak the lazily-initialized Config instance associated to the system classloader
-            if (customConfig == null) {
-                QuarkusConfigFactory.setConfig(null);
-            }
-        }
+        assertThat(reflective)
+                .flatExtracting(ReflectiveClassBuildItem::getClassNames)
+                .extracting(n -> n.replace('/', '.'))
+                .allSatisfy(s -> assertThat(reflectiveNames).satisfiesOnlyOnce(c -> c.apply(s)));
     }
 
     Function<String, Assert> assertMatches(String regex) {

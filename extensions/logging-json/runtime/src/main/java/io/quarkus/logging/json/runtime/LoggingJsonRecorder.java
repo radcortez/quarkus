@@ -19,8 +19,6 @@ import java.util.Set;
 import java.util.logging.Formatter;
 import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logmanager.PropertyValues;
 import org.jboss.logmanager.formatters.StructuredFormatter.Key;
 
@@ -29,6 +27,7 @@ import io.quarkus.logging.json.runtime.JsonLogConfig.JsonConfig;
 import io.quarkus.runtime.ApplicationConfig;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
+import io.smallrye.config.Config;
 
 @Recorder
 public class LoggingJsonRecorder {
@@ -130,7 +129,7 @@ public class LoggingJsonRecorder {
         additionalFields.computeIfAbsent(ECS_VERSION.getKey(), k -> new AdditionalField("1.12.2", Type.STRING));
         additionalFields.computeIfAbsent(DATA_STREAM_TYPE.getKey(), k -> new AdditionalField("logs", Type.STRING));
 
-        Config quarkusConfig = ConfigProvider.getConfig();
+        Config quarkusConfig = Config.get();
         quarkusConfig.getOptionalValue("quarkus.application.name", String.class).ifPresent(
                 s -> additionalFields.computeIfAbsent(SERVICE_NAME.getKey(), k -> new AdditionalField(s, Type.STRING)));
         quarkusConfig.getOptionalValue("quarkus.application.version", String.class).ifPresent(

@@ -15,11 +15,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.quarkus.runtime.LaunchMode;
+import io.smallrye.config.Config;
 import io.smallrye.stork.api.config.ServiceConfig;
 import io.smallrye.stork.spi.config.SimpleServiceConfig;
 
@@ -77,10 +76,10 @@ public class StorkConfigUtil {
     public static ServiceConfiguration buildDefaultRegistrarConfiguration(String serviceRegistrarType, String healthCheckPath) {
         requireRegistrarTypeNotBlank(serviceRegistrarType);
         Map<String, String> parameters = new HashMap<>();
-        Config quarkusConfig = ConfigProvider.getConfig();
+        io.smallrye.config.Config config = io.smallrye.config.Config.get();
         if (healthCheckPath != null && !healthCheckPath.isBlank()) {
-            healthCheckPath = HTTPS + getOrDefaultHost(parameters, quarkusConfig) + ":"
-                    + getOrDefaultPort(parameters, quarkusConfig) + healthCheckPath;
+            healthCheckPath = HTTPS + getOrDefaultHost(parameters, config) + ":" + getOrDefaultPort(parameters, config)
+                    + healthCheckPath;
             parameters.put("health-check-url", healthCheckPath);
         }
         return buildServiceConfigurationWithRegistrar(serviceRegistrarType, true, parameters);

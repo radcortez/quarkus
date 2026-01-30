@@ -12,11 +12,10 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
+import io.smallrye.config.Config;
 import io.smallrye.config.ConfigValue;
-import io.smallrye.config.SmallRyeConfig;
 import io.vertx.core.impl.ConcurrentHashSet;
 
 public class ConfigDescriptionsManager implements Supplier<ConfigDescriptionsManager> {
@@ -74,7 +73,7 @@ public class ConfigDescriptionsManager implements Supplier<ConfigDescriptionsMan
 
         Map<ConfigSourceName, List<ConfigDescription>> ordered = new TreeMap<>();
         List<String> properties = new ArrayList<>();
-        SmallRyeConfig current = (SmallRyeConfig) ConfigProvider.getConfig();
+        Config current = Config.get();
 
         Map<List<String>, Set<String>> allPropertySegments = new HashMap<>();
         Set<String> propertyNames = new HashSet<>(addedConfigKeys);

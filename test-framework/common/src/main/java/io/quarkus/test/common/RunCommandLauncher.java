@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.input.TeeInputStream;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.quarkus.bootstrap.BootstrapException;
@@ -35,7 +34,7 @@ import io.quarkus.bootstrap.app.QuarkusBootstrap;
 import io.quarkus.deployment.cmd.RunCommandActionResultBuildItem;
 import io.quarkus.deployment.cmd.RunCommandHandler;
 import io.quarkus.runtime.logging.LogRuntimeConfig;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public class RunCommandLauncher implements ArtifactLauncher<ArtifactLauncher.InitContext> {
     private static final Logger log = Logger.getLogger(RunCommandLauncher.class);
@@ -116,8 +115,7 @@ public class RunCommandLauncher implements ArtifactLauncher<ArtifactLauncher.Ini
         System.out.println("Executing \"" + String.join(" ", args) + "\"");
         if (needsLogFile) {
             if (logFilePath == null) {
-                SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
-                LogRuntimeConfig logRuntimeConfig = config.getConfigMapping(LogRuntimeConfig.class);
+                LogRuntimeConfig logRuntimeConfig = Config.get().getConfigMapping(LogRuntimeConfig.class);
                 logFile = logRuntimeConfig.file().path().toPath();
             }
             System.out.println("Creating Logfile for custom extension run: " + logFile.toString());

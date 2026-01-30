@@ -6,9 +6,6 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_AFTER;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.deployment.Capabilities;
 import io.quarkus.deployment.Capability;
@@ -33,6 +30,7 @@ import io.quarkus.resteasy.common.spi.ResteasyJaxrsProviderBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.PreExceptionMapperHandlerBuildItem;
 import io.quarkus.resteasy.reactive.spi.CustomContainerRequestFilterBuildItem;
 import io.quarkus.vertx.core.deployment.VertxOptionsConsumerBuildItem;
+import io.smallrye.config.Config;
 
 @BuildSteps(onlyIf = TracerEnabled.class)
 public class InstrumentationProcessor {
@@ -42,7 +40,7 @@ public class InstrumentationProcessor {
 
         @Override
         public boolean getAsBoolean() {
-            Config config = ConfigProvider.getConfig();
+            Config config = Config.get();
             if (IS_MICROMETER_EXTENSION_AVAILABLE) {
                 if (config.getOptionalValue("quarkus.micrometer.enabled", Boolean.class).orElse(true)) {
                     Optional<Boolean> httpServerEnabled = config

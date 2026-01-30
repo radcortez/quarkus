@@ -51,8 +51,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.ParamConverterProvider;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
@@ -91,6 +89,7 @@ import io.quarkus.resteasy.common.runtime.QuarkusInjectorFactory;
 import io.quarkus.runtime.ImageMode;
 import io.quarkus.runtime.graal.DisabledSSLContext;
 import io.quarkus.runtime.ssl.SslContextConfiguration;
+import io.smallrye.config.Config;
 
 /**
  * This is mostly a copy from {@link org.jboss.resteasy.microprofile.client.RestClientBuilderImpl}. It is required to
@@ -136,12 +135,7 @@ public class QuarkusRestClientBuilder implements RestClientBuilder {
         }
         configurationWrapper = new ConfigurationWrapper(builderDelegate.getConfiguration());
 
-        try {
-            // configuration MP may not be available.
-            config = ConfigProvider.getConfig();
-        } catch (Throwable e) {
-
-        }
+        config = Config.get();
         headers = new Headers<>();
     }
 
@@ -809,7 +803,6 @@ public class QuarkusRestClientBuilder implements RestClientBuilder {
     public void registerLocalProviderInstance(Object provider, Map<Class<?>, Integer> contracts) {
         for (Object registered : getLocalProviderInstances()) {
             if (registered == provider) {
-                // System.out.println("Provider already registered " + provider.getClass().getName());
                 return;
             }
         }

@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -37,7 +36,7 @@ import io.quarkus.test.junit.launcher.ArtifactLauncherProvider;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import io.quarkus.test.junit.main.QuarkusMainLauncher;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWithContextExtension
         implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
@@ -96,7 +95,7 @@ public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWith
         ensureNoInjectAnnotationIsUsed(testClass, "@QuarkusMainIntegrationTest");
 
         quarkusArtifactProperties = readQuarkusArtifactProperties(extensionContext);
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+        Config config = Config.get();
         String artifactType = getEffectiveArtifactType(quarkusArtifactProperties, config);
 
         TestConfig testConfig = config.getConfigMapping(TestConfig.class);
@@ -163,13 +162,11 @@ public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWith
                 }
                 additionalProperties.putAll(resourceManagerProps);
                 // recalculate the property names that may have changed with testProfileAndProperties.properties
-                ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
+                Config.get().getLatestPropertyNames();
 
                 testResourceManager.inject(context.getRequiredTestInstance());
 
-                SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
-                TestConfig testConfig = config.getConfigMapping(TestConfig.class);
-
+                TestConfig testConfig = Config.get().getConfigMapping(TestConfig.class);
                 ArtifactLauncher<?> launcher = null;
                 ServiceLoader<ArtifactLauncherProvider> loader = ServiceLoader.load(ArtifactLauncherProvider.class);
                 for (ArtifactLauncherProvider launcherProvider : loader) {
@@ -198,7 +195,7 @@ public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWith
                     }
                 }
                 // recalculate the property names that may have changed with the restore
-                ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
+                Config.get().getLatestPropertyNames();
                 try {
                     if (testResourceManager != null) {
                         testResourceManager.close();

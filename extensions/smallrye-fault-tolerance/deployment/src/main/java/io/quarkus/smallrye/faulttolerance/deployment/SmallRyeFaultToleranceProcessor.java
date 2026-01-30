@@ -12,8 +12,6 @@ import java.util.Set;
 import jakarta.annotation.Priority;
 import jakarta.enterprise.inject.spi.DefinitionException;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget.Kind;
 import org.jboss.jandex.AnnotationValue;
@@ -61,6 +59,7 @@ import io.quarkus.smallrye.faulttolerance.runtime.QuarkusFallbackHandlerProvider
 import io.quarkus.smallrye.faulttolerance.runtime.QuarkusFaultToleranceOperationProvider;
 import io.quarkus.smallrye.faulttolerance.runtime.SmallRyeFaultToleranceRecorder;
 import io.quarkus.smallrye.faulttolerance.runtime.config.SmallRyeFaultToleranceConfigRelocate;
+import io.smallrye.config.Config;
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.faulttolerance.CdiSpi;
 import io.smallrye.faulttolerance.CircuitBreakerMaintenanceImpl;
@@ -224,9 +223,7 @@ public class SmallRyeFaultToleranceProcessor {
                     if (!ctx.getTarget().asClass().name().equals(DotNames.FAULT_TOLERANCE_INTERCEPTOR)) {
                         return;
                     }
-                    Config config = ConfigProvider.getConfig();
-
-                    OptionalInt priority = config.getValue("mp.fault.tolerance.interceptor.priority", OptionalInt.class);
+                    OptionalInt priority = Config.get().getValue("mp.fault.tolerance.interceptor.priority", OptionalInt.class);
                     if (priority.isPresent()) {
                         ctx.transform()
                                 .remove(ann -> ann.name().toString().equals(Priority.class.getName()))
@@ -253,11 +250,10 @@ public class SmallRyeFaultToleranceProcessor {
             BuildProducer<ValidationPhaseBuildItem.ValidationErrorBuildItem> errors,
             BuildProducer<FaultToleranceInfoBuildItem> faultToleranceInfo) {
 
-        Config config = ConfigProvider.getConfig();
-
         Set<String> exceptionConfigs = Set.of("CircuitBreaker/failOn", "CircuitBreaker/skipOn",
                 "Fallback/applyOn", "Fallback/skipOn", "Retry/retryOn", "Retry/abortOn");
 
+        Config config = Config.get();
         for (String exceptionConfig : exceptionConfigs) {
             Optional<String[]> exceptionNames = config.getOptionalValue(exceptionConfig, String[].class);
             if (exceptionNames.isPresent()) {

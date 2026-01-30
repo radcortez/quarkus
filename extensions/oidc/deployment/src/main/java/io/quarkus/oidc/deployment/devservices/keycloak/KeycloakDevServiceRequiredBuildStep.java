@@ -4,7 +4,6 @@ import static io.quarkus.devservices.keycloak.KeycloakDevServicesRequiredBuildIt
 
 import java.util.HashMap;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.quarkus.deployment.IsDevServicesSupportedByLaunchMode;
@@ -14,6 +13,7 @@ import io.quarkus.deployment.dev.devservices.DevServicesConfig;
 import io.quarkus.devservices.keycloak.KeycloakDevServicesConfig;
 import io.quarkus.devservices.keycloak.KeycloakDevServicesRequiredBuildItem;
 import io.quarkus.oidc.deployment.OidcBuildStep;
+import io.smallrye.config.Config;
 
 @BuildSteps(onlyIf = { IsDevServicesSupportedByLaunchMode.class, OidcBuildStep.IsEnabled.class,
         DevServicesConfig.Enabled.class })
@@ -46,10 +46,10 @@ public class KeycloakDevServiceRequiredBuildStep {
     }
 
     private static boolean isOidcTenantEnabled() {
-        return ConfigProvider.getConfig().getOptionalValue(TENANT_ENABLED_CONFIG_KEY, Boolean.class).orElse(true);
+        return Config.get().getOptionalValue(TENANT_ENABLED_CONFIG_KEY, Boolean.class).orElse(true);
     }
 
     private static String getOidcApplicationType() {
-        return ConfigProvider.getConfig().getOptionalValue(APPLICATION_TYPE_CONFIG_KEY, String.class).orElse("service");
+        return Config.get().getOptionalValue(APPLICATION_TYPE_CONFIG_KEY, String.class).orElse("service");
     }
 }

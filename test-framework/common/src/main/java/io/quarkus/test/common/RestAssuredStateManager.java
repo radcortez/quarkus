@@ -3,14 +3,13 @@ package io.quarkus.test.common;
 import java.time.Duration;
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.restassured.RestAssured;
 import io.restassured.config.HttpClientConfig;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.internal.path.json.ConfigurableJsonSlurper;
 import io.restassured.path.json.JsonPath;
 import io.restassured.specification.RequestSpecification;
+import io.smallrye.config.Config;
 
 /**
  * Utility class that sets the rest assured port to the default test port and meaningful timeouts.
@@ -49,7 +48,7 @@ public class RestAssuredStateManager {
 
     private static int getPortFromConfig(int defaultValue, String... keys) {
         for (String key : keys) {
-            Optional<Integer> port = ConfigProvider.getConfig().getOptionalValue(key, Integer.class);
+            Optional<Integer> port = Config.get().getOptionalValue(key, Integer.class);
             if (port.isPresent())
                 return port.get();
         }
@@ -83,16 +82,14 @@ public class RestAssuredStateManager {
 
         oldBaseURI = RestAssured.baseURI;
         final String protocol = useSecureConnection ? "https://" : "http://";
-        String host = ConfigProvider.getConfig().getOptionalValue("quarkus.http.host", String.class)
-                .orElse("localhost");
+        String host = Config.get().getOptionalValue("quarkus.http.host", String.class).orElse("localhost");
         if (host.equals("0.0.0.0")) {
             host = "localhost";
         }
         RestAssured.baseURI = protocol + host;
 
         oldBasePath = RestAssured.basePath;
-        Optional<String> basePath = ConfigProvider.getConfig().getOptionalValue("quarkus.http.root-path",
-                String.class);
+        Optional<String> basePath = Config.get().getOptionalValue("quarkus.http.root-path", String.class);
         if (basePath.isPresent() || additionalPath != null) {
             StringBuilder bp = new StringBuilder();
             if (basePath.isPresent()) {
@@ -119,13 +116,12 @@ public class RestAssuredStateManager {
 
         oldRestAssuredConfig = RestAssured.config();
 
-        Duration timeout = ConfigProvider.getConfig()
-                .getOptionalValue("quarkus.http.test-timeout", Duration.class).orElse(Duration.ofSeconds(30));
+        Duration timeout = Config.get().getOptionalValue("quarkus.http.test-timeout", Duration.class)
+                .orElse(Duration.ofSeconds(30));
         configureTimeouts(timeout);
 
         oldRequestSpecification = RestAssured.requestSpecification;
-        if (ConfigProvider.getConfig()
-                .getOptionalValue("quarkus.test.rest-assured.enable-logging-on-failure", Boolean.class).orElse(true)) {
+        if (Config.get().getOptionalValue("quarkus.test.rest-assured.enable-logging-on-failure", Boolean.class).orElse(true)) {
             RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
         }
     }

@@ -4,17 +4,17 @@ import java.util.Optional;
 
 import jakarta.enterprise.inject.spi.CDI;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.openapi.OASFilter;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
+
+import io.smallrye.config.Config;
 
 /**
  * Filter to add custom elements
  */
 public class MyOASFilter implements OASFilter {
 
-    final Config config = ConfigProvider.getConfig();
+    final Config config = Config.get();
 
     @Override
     public void filterOpenAPI(OpenAPI openAPI) {

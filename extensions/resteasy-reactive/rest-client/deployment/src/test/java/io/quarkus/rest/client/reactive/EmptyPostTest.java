@@ -8,11 +8,11 @@ import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import io.quarkus.test.QuarkusUnitTest;
+import io.smallrye.config.Config;
 
 public class EmptyPostTest {
 
@@ -21,9 +21,7 @@ public class EmptyPostTest {
 
     @Test
     void shouldWork() {
-        Client client = clientWithUri(
-                "http://localhost:" + ConfigProvider.getConfig().getValue("quarkus.http.test-port", Integer.class));
-
+        Client client = clientWithUri("http://localhost:" + Config.get().getValue("quarkus.http.test-port", Integer.class));
         assertThat(client.post()).isEqualTo("0");
     }
 

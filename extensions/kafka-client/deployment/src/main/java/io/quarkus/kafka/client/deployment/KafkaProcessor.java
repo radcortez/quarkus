@@ -50,7 +50,6 @@ import org.apache.kafka.common.serialization.ShortDeserializer;
 import org.apache.kafka.common.serialization.ShortSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 
@@ -112,6 +111,7 @@ import io.quarkus.kafka.client.serialization.ObjectMapperSerializer;
 import io.quarkus.kafka.client.tls.QuarkusKafkaSslEngineFactory;
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.smallrye.health.deployment.spi.HealthBuildItem;
+import io.smallrye.config.Config;
 
 public class KafkaProcessor {
 
@@ -427,7 +427,7 @@ public class KafkaProcessor {
                         .build());
 
         // Enable SSL support if kafka.security.protocol is set to something other than PLAINTEXT, which is the default
-        String securityProtocol = ConfigProvider.getConfig().getConfigValue("kafka.security.protocol").getValue();
+        String securityProtocol = Config.get().getConfigValue("kafka.security.protocol").getValue();
         if (securityProtocol != null && SecurityProtocol.forName(securityProtocol) != SecurityProtocol.PLAINTEXT) {
             sslNativeSupport.produce(new ExtensionSslNativeSupportBuildItem(Feature.KAFKA_CLIENT));
         }

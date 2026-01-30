@@ -9,11 +9,9 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.regex.Pattern;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigValue;
-
 import io.quarkus.bootstrap.util.PropertyUtils;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
+import io.smallrye.config.ConfigValue;
 
 /**
  * Transforms configuration values before they are written to a file
@@ -38,8 +36,7 @@ public class ConfigTrackingValueTransformer {
     }
 
     public static ConfigTrackingValueTransformer newInstance(Config config) {
-        return new ConfigTrackingValueTransformer(
-                config.unwrap(SmallRyeConfig.class).getConfigMapping(ConfigTrackingConfig.class));
+        return new ConfigTrackingValueTransformer(config.getConfigMapping(ConfigTrackingConfig.class));
     }
 
     public static ConfigTrackingValueTransformer newInstance(ConfigTrackingConfig config) {

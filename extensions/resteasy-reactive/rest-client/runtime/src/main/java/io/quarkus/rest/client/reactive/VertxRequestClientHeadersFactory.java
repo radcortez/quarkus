@@ -8,10 +8,9 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.Provider;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory;
 
+import io.smallrye.config.Config;
 import io.vertx.core.http.HttpServerRequest;
 
 /**
@@ -36,26 +35,12 @@ public class VertxRequestClientHeadersFactory implements ClientHeadersFactory {
         this.httpServerRequest = httpServerRequest;
     }
 
-    private static Optional<Config> config() {
-        try {
-            return Optional.ofNullable(ConfigProvider.getConfig());
-        } catch (NoClassDefFoundError | IllegalStateException | ExceptionInInitializerError var1) {
-            return Optional.empty();
-        }
-    }
-
-    private static Optional<String> getHeadersProperty() {
-        Optional<Config> c = config();
-        return c
-                .flatMap(config -> config.getOptionalValue(PROPAGATE_PROPERTY, String.class));
-    }
-
     @Override
     public MultivaluedMap<String, String> update(MultivaluedMap<String, String> ignore,
             MultivaluedMap<String, String> clientOutgoingHeaders) {
 
         MultivaluedMap<String, String> propagatedHeaders = new MultivaluedHashMap<>();
-        Optional<String> optionalPropagateHeaders = getHeadersProperty();
+        Optional<String> optionalPropagateHeaders = Config.get().getOptionalValue(PROPAGATE_PROPERTY, String.class);
 
         optionalPropagateHeaders.ifPresent(s -> Arrays.stream(s.split(","))
                 .forEach(header -> {

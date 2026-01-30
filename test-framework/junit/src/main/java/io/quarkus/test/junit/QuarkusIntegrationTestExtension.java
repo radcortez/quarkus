@@ -33,7 +33,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
@@ -64,7 +63,7 @@ import io.quarkus.test.common.TestScopeManager;
 import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
 import io.quarkus.test.junit.launcher.ArtifactLauncherProvider;
 import io.quarkus.value.registry.ValueRegistry;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.common.MapBackedConfigSource;
 
@@ -182,8 +181,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
                 setState(extensionContext, state);
             } catch (Throwable e) {
                 try {
-                    LogRuntimeConfig logRuntimeConfig = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class)
-                            .getConfigMapping(LogRuntimeConfig.class);
+                    LogRuntimeConfig logRuntimeConfig = Config.get().getConfigMapping(LogRuntimeConfig.class);
                     File appLogFile = logRuntimeConfig.file().path();
                     if (appLogFile.exists() && (appLogFile.length() > 0)) {
                         System.err.println("Failed to launch the application. The application logs can be found at: "
@@ -204,7 +202,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
             Class<? extends QuarkusTestProfile> profile, ExtensionContext context)
             throws Throwable {
 
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+        Config config = Config.get();
         String artifactType = getEffectiveArtifactType(quarkusArtifactProperties, config);
 
         TestConfig testConfig = config.getConfigMapping(TestConfig.class);
@@ -283,13 +281,13 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
                                     System.setProperty(i.getKey(), i.getValue());
                                 }
                                 // recalculate the property names that may have changed with the restore
-                                ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
+                                Config.get().getLatestPropertyNames();
                             }
                         }
                     });
             additionalProperties.putAll(resourceManagerProps);
             // recalculate the property names that may have changed with testProfileAndProperties.properties
-            ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
+            Config.get().getLatestPropertyNames();
 
             ArtifactLauncher<?> launcher;
             String testHost = System.getProperty("quarkus.http.test-host");
@@ -384,7 +382,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
 
     private boolean isCallbacksEnabledForIntegrationTests() {
         return Optional.ofNullable(System.getProperty(ENABLED_CALLBACKS_PROPERTY)).map(Boolean::parseBoolean)
-                .or(() -> ConfigProvider.getConfig().getOptionalValue(ENABLED_CALLBACKS_PROPERTY, Boolean.class))
+                .or(() -> Config.get().getOptionalValue(ENABLED_CALLBACKS_PROPERTY, Boolean.class))
                 .orElse(false);
     }
 

@@ -1,12 +1,11 @@
 package io.quarkus.test.config;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.ClassOrderer;
 import org.junit.jupiter.api.ClassOrdererContext;
 import org.junit.platform.commons.util.ReflectionUtils;
 
 import io.quarkus.deployment.dev.testing.TestConfig;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 /**
  * A JUnit {@link ClassOrderer}, used to delegate to a custom implementations of {@link ClassOrderer} set by Quarkus
@@ -22,10 +21,7 @@ public class QuarkusClassOrderer implements ClassOrderer {
         Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
 
         try {
-            SmallRyeConfig config = ConfigProvider.getConfig()
-                    .unwrap(SmallRyeConfig.class);
-            TestConfig testConfig = config.getConfigMapping(TestConfig.class);
-
+            TestConfig testConfig = Config.getOrCreate().getConfigMapping(TestConfig.class);
             delegate = testConfig.classOrderer()
                     .map(klass -> ReflectionUtils.tryToLoadClass(klass)
                             .andThenTry(ReflectionUtils::newInstance)

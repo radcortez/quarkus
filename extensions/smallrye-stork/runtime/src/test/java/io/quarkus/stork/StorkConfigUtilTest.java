@@ -8,12 +8,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import io.smallrye.config.Config;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import io.smallrye.config.common.MapBackedConfigSource;
 
@@ -31,11 +29,6 @@ public class StorkConfigUtilTest {
                 .withSources(new MapBackedConfigSource("test", configMap) {
                 })
                 .build();
-    }
-
-    @AfterEach
-    void tearDown() {
-        ConfigProviderResolver.instance().releaseConfig(config);
     }
 
     @Test

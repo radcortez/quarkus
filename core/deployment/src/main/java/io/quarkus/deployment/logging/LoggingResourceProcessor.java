@@ -38,7 +38,6 @@ import org.aesh.command.completer.CompleterInvocation;
 import org.aesh.command.completer.OptionCompleter;
 import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.option.Option;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.ClassInfo;
@@ -136,7 +135,7 @@ import io.quarkus.runtime.logging.LogFilterFactory;
 import io.quarkus.runtime.logging.LogMetricsHandlerRecorder;
 import io.quarkus.runtime.logging.LogRuntimeConfig;
 import io.quarkus.runtime.logging.LoggingSetupRecorder;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public final class LoggingResourceProcessor {
 
@@ -333,7 +332,7 @@ public final class LoggingResourceProcessor {
                         filterElement.getMessageStarts()));
             }
 
-            SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+            Config config = Config.get();
             LogBuildTimeConfig logBuildTimeConfig = config.getConfigMapping(LogBuildTimeConfig.class);
             LogRuntimeConfig logRuntimeConfigInBuild = config.getConfigMapping(LogRuntimeConfig.class);
             ConsoleRuntimeConfig consoleRuntimeConfig = config.getConfigMapping(ConsoleRuntimeConfig.class);

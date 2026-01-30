@@ -17,7 +17,6 @@ import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.sse.SseEventSource;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +24,7 @@ import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import io.smallrye.config.Config;
 
 @QuarkusTest
 class OutputResourceTest {
@@ -57,7 +57,7 @@ class OutputResourceTest {
     private void doTestSee(String path, String expectedDataValue)
             throws URISyntaxException, InterruptedException, MalformedURLException {
         Client client = ClientBuilder.newBuilder().build();
-        WebTarget target = client.target(new URL(ConfigProvider.getConfig().getValue("test.url", String.class)).toURI())
+        WebTarget target = client.target(new URL(Config.get().getValue("test.url", String.class)).toURI())
                 .path(RESOURCE_PATH).path(path);
         try (SseEventSource sse = SseEventSource.target(target).build()) {
             CountDownLatch latch = new CountDownLatch(1);

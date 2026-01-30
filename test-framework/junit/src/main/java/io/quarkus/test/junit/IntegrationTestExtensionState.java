@@ -5,12 +5,10 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.quarkus.test.common.ListeningAddress;
 import io.quarkus.test.common.TestResourceManager;
 import io.quarkus.value.registry.ValueRegistry;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class IntegrationTestExtensionState extends QuarkusTestExtensionState {
@@ -47,6 +45,6 @@ public class IntegrationTestExtensionState extends QuarkusTestExtensionState {
             }
         }
         // recalculate the property names that may have changed with the restore
-        ConfigProvider.getConfig().unwrap(SmallRyeConfig.class).getLatestPropertyNames();
+        Config.get().getLatestPropertyNames();
     }
 }

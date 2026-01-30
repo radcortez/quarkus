@@ -2,7 +2,6 @@ package io.quarkus.extest;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -10,6 +9,7 @@ import io.quarkus.builder.BuildContext;
 import io.quarkus.builder.BuildStep;
 import io.quarkus.deployment.builditem.RunTimeConfigurationDefaultBuildItem;
 import io.quarkus.test.QuarkusUnitTest;
+import io.smallrye.config.Config;
 
 public class OverrideBuildDefaultInRuntimeTest {
     @RegisterExtension
@@ -26,6 +26,6 @@ public class OverrideBuildDefaultInRuntimeTest {
 
     @Test
     public void testConsoleLogging() {
-        assertFalse(ConfigProvider.getConfig().getValue("quarkus.log.console.enable", boolean.class));
+        assertFalse(Config.get().getValue("quarkus.log.console.enable", boolean.class));
     }
 }

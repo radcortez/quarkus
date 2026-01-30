@@ -14,10 +14,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.quarkus.deployment.util.DeploymentUtil;
+import io.smallrye.config.Config;
 
 public class KubernetesConfigUtil {
 
@@ -33,7 +31,7 @@ public class KubernetesConfigUtil {
      * The explicit deployment target is determined using: {@code quarkus.kubernetes.deployment-target=<deployment-target>}
      */
     public static Optional<String> getExplicitlyConfiguredDeploymentTarget() {
-        Config config = ConfigProvider.getConfig();
+        Config config = Config.get();
         return config.getOptionalValue(DEPLOYMENT_TARGET, String.class);
     }
 
@@ -125,7 +123,7 @@ public class KubernetesConfigUtil {
     }
 
     public static boolean managementPortIsEnabled() {
-        return ConfigProvider.getConfig().getOptionalValue("quarkus.management.enabled", Boolean.class).orElse(false);
+        return Config.get().getOptionalValue("quarkus.management.enabled", Boolean.class).orElse(false);
     }
 
     private static Map<String, Object> toS2iProperties(Map<String, Object> map) {

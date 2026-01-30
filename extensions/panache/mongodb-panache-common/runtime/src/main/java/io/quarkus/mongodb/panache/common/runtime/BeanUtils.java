@@ -6,8 +6,6 @@ import java.util.function.Predicate;
 
 import jakarta.inject.Named;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.InjectableBean;
 import io.quarkus.arc.InjectableInstance;
@@ -17,7 +15,7 @@ import io.quarkus.mongodb.panache.common.MongoEntity;
 import io.quarkus.mongodb.runtime.MongoClientBeanUtil;
 import io.quarkus.mongodb.runtime.MongoClientConfig;
 import io.quarkus.mongodb.runtime.MongoConfig;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 
 public final class BeanUtils {
 
@@ -63,8 +61,7 @@ public final class BeanUtils {
     }
 
     public static String getDatabaseName(MongoEntity mongoEntity, String clientBeanName) {
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
-        MongoConfig mongoConfig = config.getConfigMapping(MongoConfig.class);
+        MongoConfig mongoConfig = Config.get().getConfigMapping(MongoConfig.class);
         MongoClientConfig mongoClientConfig = mongoConfig.clients().get(clientBeanName);
         if (mongoClientConfig.database().isPresent()) {
             return mongoClientConfig.database().get();

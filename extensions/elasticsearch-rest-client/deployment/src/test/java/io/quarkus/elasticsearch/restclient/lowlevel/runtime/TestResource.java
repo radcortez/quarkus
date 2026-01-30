@@ -11,11 +11,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.QueryParam;
 
 import org.apache.http.util.EntityUtils;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 
+import io.smallrye.config.Config;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -61,7 +61,7 @@ public class TestResource {
     @GET
     @Path("/configured-hosts")
     public String configuredHosts() {
-        return ConfigProvider.getConfig().getConfigValue("quarkus.elasticsearch.hosts").getValue();
+        return Config.get().getConfigValue("quarkus.elasticsearch.hosts").getValue();
     }
 
     public static class Fruit {

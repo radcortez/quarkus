@@ -2,8 +2,6 @@ package io.quarkus.smallrye.jwt.build.deployment;
 
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -11,6 +9,7 @@ import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.deployment.pkg.steps.NativeOrNativeSourcesBuild;
+import io.smallrye.config.Config;
 import io.smallrye.jwt.algorithm.KeyEncryptionAlgorithm;
 import io.smallrye.jwt.algorithm.SignatureAlgorithm;
 import io.smallrye.jwt.build.impl.JwtBuildUtils;
@@ -37,7 +36,7 @@ class SmallRyeJwtBuildProcessor {
      */
     @BuildStep(onlyIf = NativeOrNativeSourcesBuild.class)
     void registerNativeImageResources(BuildProducer<NativeImageResourceBuildItem> nativeImageResource) {
-        Config config = ConfigProvider.getConfig();
+        Config config = Config.get();
         registerKeyLocationResource(config, JwtBuildUtils.SIGN_KEY_LOCATION_PROPERTY, nativeImageResource);
         registerKeyLocationResource(config, JwtBuildUtils.ENC_KEY_LOCATION_PROPERTY, nativeImageResource);
     }

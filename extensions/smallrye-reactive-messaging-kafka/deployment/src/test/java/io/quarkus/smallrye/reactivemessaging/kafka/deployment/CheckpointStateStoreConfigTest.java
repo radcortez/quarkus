@@ -9,8 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import io.smallrye.config.SmallRyeConfig;
@@ -20,13 +18,6 @@ import io.smallrye.config.common.MapBackedConfigSource;
 public class CheckpointStateStoreConfigTest {
 
     SmallRyeConfig config;
-
-    @AfterEach
-    void tearDown() {
-        if (config != null) {
-            ConfigProviderResolver.instance().releaseConfig(config);
-        }
-    }
 
     private void createConfig(Map<String, String> configMap) {
         config = new SmallRyeConfigBuilder()

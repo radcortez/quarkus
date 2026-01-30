@@ -23,14 +23,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import io.quarkus.deployment.pkg.steps.NativeImageBuildLocalContainerRunner;
 import io.quarkus.deployment.util.ContainerRuntimeUtil;
 import io.quarkus.deployment.util.ContainerRuntimeUtil.ContainerRuntime;
 import io.quarkus.runtime.logging.LogRuntimeConfig;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.Config;
 import io.smallrye.config.common.utils.StringUtil;
 
 public class DefaultDockerContainerLauncher implements DockerContainerArtifactLauncher {
@@ -182,8 +181,7 @@ public class DefaultDockerContainerLauncher implements DockerContainerArtifactLa
 
     @Override
     public Optional<ListeningAddress> start() throws IOException {
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
-        LogRuntimeConfig logRuntimeConfig = config.getConfigMapping(LogRuntimeConfig.class);
+        LogRuntimeConfig logRuntimeConfig = Config.get().getConfigMapping(LogRuntimeConfig.class);
 
         final ContainerRuntime containerRuntime = ContainerRuntimeUtil.detectContainerRuntime();
         containerRuntimeBinaryName = containerRuntime.getExecutableName();

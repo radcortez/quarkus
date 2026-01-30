@@ -13,6 +13,7 @@ import io.quarkus.dev.appstate.ApplicationStateNotification;
 import io.quarkus.runtime.shutdown.ShutdownRecorder;
 import io.quarkus.value.registry.ValueRegistry;
 import io.smallrye.common.constraint.Assert;
+import io.smallrye.config.SmallRyeConfigProviderResolver;
 
 /**
  * The application base class, which is extended and implemented by a generated class which implements the application
@@ -116,9 +117,9 @@ public abstract class Application implements Closeable {
             doStart(args);
         } catch (Throwable t) {
             stateLock.lock();
-            final ConfigProviderResolver cpr = ConfigProviderResolver.instance();
             try {
-                cpr.releaseConfig(cpr.getConfig());
+                ((SmallRyeConfigProviderResolver) ConfigProviderResolver.instance())
+                        .releaseConfig(Thread.currentThread().getContextClassLoader());
             } catch (IllegalStateException ignored) {
                 // just means no config was installed, which is fine
             }
@@ -152,9 +153,8 @@ public abstract class Application implements Closeable {
             stop();
         } finally {
             try {
-                ConfigProviderResolver.instance()
-                        .releaseConfig(
-                                ConfigProviderResolver.instance().getConfig(Thread.currentThread().getContextClassLoader()));
+                ((SmallRyeConfigProviderResolver) ConfigProviderResolver.instance())
+                        .releaseConfig(Thread.currentThread().getContextClassLoader());
             } catch (Throwable ignored) {
 
             }

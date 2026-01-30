@@ -11,9 +11,6 @@ import java.util.List;
 import java.util.OptionalInt;
 
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import org.jboss.logging.Logger;
 
 import com.microsoft.azure.toolkit.lib.common.exception.AzureExecutionException;
 import com.microsoft.azure.toolkit.lib.legacy.function.handlers.CommandHandler;
@@ -24,9 +21,9 @@ import io.quarkus.builder.BuildException;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.cmd.RunCommandActionBuildItem;
 import io.quarkus.deployment.pkg.builditem.OutputTargetBuildItem;
+import io.smallrye.config.Config;
 
 public class AzureFunctionsRunCommand {
-    private static final Logger log = Logger.getLogger(AzureFunctionsRunCommand.class);
     protected static final String FUNC_CMD = "func -v";
     protected static final String FUNC_HOST_START_CMD = "func host start -p %s";
     protected static final String RUNTIME_NOT_FOUND = "Azure Functions Core Tools not found. " +
@@ -80,7 +77,7 @@ public class AzureFunctionsRunCommand {
         if (azureConfig.funcPort().isPresent()) {
             funcPort = azureConfig.funcPort().get();
         } else {
-            Config config = ConfigProviderResolver.instance().getConfig();
+            Config config = Config.get();
             funcPort = config.getValue("quarkus.http.test-port", OptionalInt.class).orElse(8081);
         }
         final String enableDebug = System.getProperty("enableDebug");

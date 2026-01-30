@@ -5,11 +5,10 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.quarkus.bootstrap.app.RunningQuarkusApplication;
 import io.quarkus.bootstrap.classloading.QuarkusClassLoader;
 import io.quarkus.value.registry.ValueRegistry;
+import io.smallrye.config.Config;
 
 public class RunningQuarkusApplicationImpl implements RunningQuarkusApplication {
 
@@ -42,22 +41,18 @@ public class RunningQuarkusApplicationImpl implements RunningQuarkusApplication 
 
     @Override
     public <T> Optional<T> getConfigValue(String key, Class<T> type) {
-
-        ClassLoader old = Thread.currentThread()
-                .getContextClassLoader();
+        ClassLoader old = Thread.currentThread().getContextClassLoader();
         try {
             // we are assuming here that the the classloader has been initialised with some kind of different provider that does not infinite loop.
-            Thread.currentThread()
-                    .setContextClassLoader(classLoader);
-            if (classLoader == ConfigProvider.class.getClassLoader()) {
-                return ConfigProvider.getConfig(classLoader)
-                        .getOptionalValue(key, type);
+            Thread.currentThread().setContextClassLoader(classLoader);
+            if (classLoader == Config.class.getClassLoader()) {
+                return Config.get(classLoader).getOptionalValue(key, type);
             } else {
                 //the config is in an isolated CL
                 //we need to extract it via reflection
                 //this is pretty yuck, but I don't really see a solution
-                Class<?> configProviderClass = classLoader.loadClass(ConfigProvider.class.getName());
-                Method getConfig = configProviderClass.getMethod("getConfig", ClassLoader.class);
+                Class<?> configProviderClass = classLoader.loadClass(Config.class.getName());
+                Method getConfig = configProviderClass.getMethod("get", ClassLoader.class);
                 Object config = getConfig.invoke(null, classLoader);
                 return (Optional<T>) getConfig.getReturnType()
                         .getMethod("getOptionalValue", String.class, Class.class)
@@ -74,8 +69,8 @@ public class RunningQuarkusApplicationImpl implements RunningQuarkusApplication 
     public Iterable<String> getConfigKeys() {
         ClassLoader old = Thread.currentThread().getContextClassLoader();
         try {
-            Class<?> configProviderClass = classLoader.loadClass(ConfigProvider.class.getName());
-            Method getConfig = configProviderClass.getMethod("getConfig", ClassLoader.class);
+            Class<?> configProviderClass = classLoader.loadClass(Config.class.getName());
+            Method getConfig = configProviderClass.getMethod("get", ClassLoader.class);
             Thread.currentThread().setContextClassLoader(classLoader);
             Object config = getConfig.invoke(null, classLoader);
             return (Iterable<String>) getConfig.getReturnType().getMethod("getPropertyNames")

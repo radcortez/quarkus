@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.quarkus.arc.deployment.BeanContainerBuildItem;
 import io.quarkus.deployment.Capabilities;
 import io.quarkus.deployment.Capability;
@@ -19,6 +17,7 @@ import io.quarkus.oidc.runtime.dev.ui.OidcDevUiRpcSvcPropertiesBean;
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.smallrye.config.Config;
 
 public abstract class AbstractDevUIProcessor {
     protected static final String CONFIG_PREFIX = "quarkus.oidc.";
@@ -58,7 +57,7 @@ public abstract class AbstractDevUIProcessor {
         // prepare data for provider component
         final boolean swaggerIsAvailable = capabilities.isPresent(Capability.SMALLRYE_OPENAPI);
         final boolean graphqlIsAvailable = capabilities.isPresent(Capability.SMALLRYE_GRAPHQL);
-        final var config = ConfigProvider.getConfig();
+        final var config = Config.get();
 
         final String swaggerUiPath;
         if (swaggerIsAvailable) {
@@ -99,7 +98,7 @@ public abstract class AbstractDevUIProcessor {
     }
 
     protected static String getApplicationType(OidcTenantConfig providerConfig) {
-        Optional<io.quarkus.oidc.runtime.OidcTenantConfig.ApplicationType> appType = ConfigProvider.getConfig()
+        Optional<io.quarkus.oidc.runtime.OidcTenantConfig.ApplicationType> appType = Config.get()
                 .getOptionalValue(APP_TYPE_CONFIG_KEY,
                         io.quarkus.oidc.runtime.OidcTenantConfig.ApplicationType.class);
         if (appType.isEmpty() && providerConfig != null) {

@@ -25,7 +25,6 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.jwt.Claims;
 import org.jboss.logging.Logger;
 import org.jose4j.base64url.Base64Url;
@@ -40,6 +39,7 @@ import io.quarkus.deployment.builditem.DevServicesResultBuildItem.RunningDevServ
 import io.quarkus.deployment.builditem.DockerStatusBuildItem;
 import io.quarkus.deployment.dev.devservices.DevServicesConfig;
 import io.quarkus.runtime.configuration.ConfigUtils;
+import io.smallrye.config.Config;
 import io.smallrye.jwt.build.Jwt;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
@@ -241,24 +241,24 @@ public class OidcDevServicesProcessor {
     }
 
     private static boolean isOidcEnabled() {
-        return ConfigProvider.getConfig().getValue(OIDC_ENABLED, Boolean.class);
+        return Config.get().getValue(OIDC_ENABLED, Boolean.class);
     }
 
     private static boolean isOidcTenantEnabled() {
-        return ConfigProvider.getConfig().getOptionalValue(TENANT_ENABLED_CONFIG_KEY, Boolean.class).orElse(true);
+        return Config.get().getOptionalValue(TENANT_ENABLED_CONFIG_KEY, Boolean.class).orElse(true);
     }
 
     private static String getOidcApplicationType() {
-        return ConfigProvider.getConfig().getOptionalValue(APPLICATION_TYPE_CONFIG_KEY, String.class).orElse("service");
+        return Config.get().getOptionalValue(APPLICATION_TYPE_CONFIG_KEY, String.class).orElse("service");
     }
 
     private static String getOidcClientId() {
-        return ConfigProvider.getConfig().getOptionalValue(CLIENT_ID_CONFIG_KEY, String.class)
+        return Config.get().getOptionalValue(CLIENT_ID_CONFIG_KEY, String.class)
                 .orElse("quarkus-app");
     }
 
     private static String getOidcClientSecret() {
-        return ConfigProvider.getConfig().getOptionalValue(CLIENT_SECRET_CONFIG_KEY, String.class)
+        return Config.get().getOptionalValue(CLIENT_SECRET_CONFIG_KEY, String.class)
                 .orElseGet(() -> UUID.randomUUID().toString());
     }
 

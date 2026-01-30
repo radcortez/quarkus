@@ -6,8 +6,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -21,7 +19,7 @@ public class KubernetesClientUtils {
     }
 
     public static Config createConfig(KubernetesClientBuildConfig buildConfig) {
-        boolean globalTrustAll = ConfigProvider.getConfig().getOptionalValue("quarkus.tls.trust-all", Boolean.class)
+        boolean globalTrustAll = io.smallrye.config.Config.get().getOptionalValue("quarkus.tls.trust-all", Boolean.class)
                 .orElse(false);
         Config base;
         if (buildConfig.kubeconfigFile().isPresent()) {
@@ -73,7 +71,7 @@ public class KubernetesClientUtils {
     }
 
     public static KubernetesClient createClient() {
-        org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
+        io.smallrye.config.Config config = io.smallrye.config.Config.get();
         Config base = Config.autoConfigure(null);
         final var configBuilder = new ConfigBuilder(base);
         optional(config, "trust-certs", Boolean.class).ifPresent(configBuilder::withTrustCerts);
