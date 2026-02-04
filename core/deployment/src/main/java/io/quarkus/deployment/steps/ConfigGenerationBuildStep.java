@@ -370,8 +370,7 @@ public class ConfigGenerationBuildStep {
                 .setClassOutput(new GeneratedClassGizmoAdaptor(generatedClass, false))
                 .setLiveReloadPossible(launchModeBuildItem.getLaunchMode() == LaunchMode.DEVELOPMENT
                         || launchModeBuildItem.isAuxiliaryApplication())
-                .build()
-                .run();
+                .build();
     }
 
     @BuildStep

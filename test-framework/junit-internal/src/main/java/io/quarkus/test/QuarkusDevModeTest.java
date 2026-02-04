@@ -29,7 +29,6 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.stream.Stream;
 
-import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.logmanager.Logger;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ExplodedExporter;
@@ -66,7 +65,6 @@ import io.quarkus.test.common.PropertyTestUtil;
 import io.quarkus.test.common.TestConfigUtil;
 import io.quarkus.test.common.TestResourceManager;
 import io.quarkus.test.common.http.TestHTTPResourceManager;
-import io.quarkus.test.config.TestConfigProviderResolver;
 import io.quarkus.value.registry.ValueRegistry;
 
 /**
@@ -241,7 +239,8 @@ public class QuarkusDevModeTest
 
     @Override
     public void beforeAll(ExtensionContext context) {
-        ((TestConfigProviderResolver) ConfigProviderResolver.instance()).getConfig(LaunchMode.DEVELOPMENT);
+        // TODO - Do we really need this?
+        //((TestConfigProviderResolver) ConfigProviderResolver.instance()).getConfig(LaunchMode.DEVELOPMENT);
         TestConfigUtil.cleanUp();
         GroovyClassValue.disable();
         originalRootLoggerHandlers = rootLogger.getHandlers();
@@ -317,7 +316,8 @@ public class QuarkusDevModeTest
         inMemoryLogHandler.setFilter(null);
         ClearCache.clearCaches();
         TestConfigUtil.cleanUp();
-        ((TestConfigProviderResolver) ConfigProviderResolver.instance()).restoreConfig();
+        // TODO - Do we really need this?
+        //((TestConfigProviderResolver) ConfigProviderResolver.instance()).restoreConfig();
     }
 
     @Override

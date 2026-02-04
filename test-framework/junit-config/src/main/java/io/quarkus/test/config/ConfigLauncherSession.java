@@ -5,6 +5,7 @@ import org.junit.platform.launcher.LauncherSession;
 import org.junit.platform.launcher.LauncherSessionListener;
 
 import io.quarkus.runtime.LaunchMode;
+import io.smallrye.config.Config;
 
 /**
  * A JUnit {@link LauncherSessionListener}, used to register the initial test config. Test set up code can safely call
@@ -25,22 +26,22 @@ public class ConfigLauncherSession implements LauncherSessionListener {
         try {
             TestConfigProviderResolver resolver = new TestConfigProviderResolver(session.getStore());
             ConfigProviderResolver.setInstance(resolver);
-            resolver.getConfig(LaunchMode.TEST);
+            Config config = resolver.getConfig(LaunchMode.TEST);
+            // Component Test registers a ClassLoader before this runs. This allows to also provide the Config in
+            // that case as early as possible
+            if (old != Thread.currentThread().getContextClassLoader()) {
+                resolver.registerConfig(config, old);
+            }
+            if (ClassLoader.getSystemClassLoader() != Thread.currentThread().getContextClassLoader()) {
+                resolver.registerConfig(config, ClassLoader.getSystemClassLoader());
+            }
         } finally {
             Thread.currentThread().setContextClassLoader(old);
         }
-
     }
 
     @Override
     public void launcherSessionClosed(final LauncherSession session) {
-        try {
-            ((TestConfigProviderResolver) ConfigProviderResolver.instance()).restore();
-        } catch (ClassCastException e) {
-            e.printStackTrace();
-            throw new IllegalStateException(
-                    "Internal error: Attempted to close a launcher session which had already been closed.");
-
-        }
+        ConfigProviderResolver.setInstance(null);
     }
 }

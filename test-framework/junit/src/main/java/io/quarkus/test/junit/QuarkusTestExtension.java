@@ -1204,6 +1204,7 @@ public class QuarkusTestExtension extends AbstractJvmQuarkusTestExtension
             shutdownHangDetection();
             firstException = null;
             failedBoot = false;
+            // TODO - ?
             ConfigProviderResolver.setInstance(null);
         }
     }

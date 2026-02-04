@@ -6,6 +6,7 @@ import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 
+@Deprecated(forRemoval = true)
 public class QuarkusTestConfigProviderResolver extends SmallRyeConfigProviderResolver {
     private final SmallRyeConfigProviderResolver resolver;
 

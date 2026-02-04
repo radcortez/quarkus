@@ -252,12 +252,7 @@ public final class FacadeClassLoader extends ClassLoader implements Closeable {
 
         // It would be nice to do this without the guard, but doing this on the normal path causes us to write something we don't want
         if (isContinuousTesting) {
-            try {
-                initialiseTestConfig(parent);
-            } catch (ClassNotFoundException | InvocationTargetException | NoSuchMethodException | InstantiationException
-                    | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
+            System.out.println("FacadeClassLoader.FacadeClassLoader");
         }
 
         facadeClassLoaderProviders = new ArrayList<>();
@@ -603,13 +598,7 @@ public final class FacadeClassLoader extends ClassLoader implements Closeable {
             Thread.currentThread().setContextClassLoader(old);
         }
 
-        // If the try block fails, this would be null, but there's no catch, so we'd never get to this code
-        QuarkusClassLoader loader = startupAction.getClassLoader();
-
-        initialiseTestConfig(loader);
-
-        return loader;
-
+        return startupAction.getClassLoader();
     }
 
     private static void initialiseTestConfig(ClassLoader loader) throws ClassNotFoundException, InstantiationException,
