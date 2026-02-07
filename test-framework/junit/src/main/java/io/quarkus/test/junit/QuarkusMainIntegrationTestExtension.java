@@ -130,7 +130,7 @@ public class QuarkusMainIntegrationTestExtension extends AbstractQuarkusTestWith
                 testResourceManager = new TestResourceManager(
                         requiredTestClass,
                         profile,
-                        copyEntriesFromProfile(testProfileAndProperties.testProfile().orElse(null),
+                        copyEntriesFromProfile(testProfileAndProperties.testProfile(),
                                 context.getRequiredTestClass().getClassLoader()),
                         testProfileAndProperties.isDisabledGlobalTestResources());
                 testResourceManager.init(testProfileAndProperties.testProfileClassName().orElse(null));

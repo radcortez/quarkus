@@ -167,7 +167,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
         boolean reloadTestResources = false;
         if ((state == null && !failedBoot) || wrongProfile || (reloadTestResources = isNewTestClass
                 && TestResourceUtil.testResourcesRequireReload(state, extensionContext.getRequiredTestClass(),
-                        selectedProfile))) {
+                        Optional.ofNullable(selectedProfile)))) {
             if (wrongProfile || reloadTestResources) {
                 if (state != null) {
                     try {
@@ -232,7 +232,7 @@ public class QuarkusIntegrationTestExtension extends AbstractQuarkusTestWithCont
             testResourceManager = new TestResourceManager(
                     requiredTestClass,
                     quarkusTestProfile,
-                    copyEntriesFromProfile(testProfileAndProperties.testProfile().orElse(null),
+                    copyEntriesFromProfile(testProfileAndProperties.testProfile(),
                             context.getRequiredTestClass().getClassLoader()),
                     testProfileAndProperties.isDisabledGlobalTestResources(),
                     devServicesProps,
