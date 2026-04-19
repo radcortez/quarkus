@@ -54,7 +54,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Cache Maven Repository
-        uses: actions/cache@v5
+        uses: actions/cache@v5.0.4
         with:
           path: ~/.m2/repository
           # A new cache will be stored weekly. After that first store of the day, cache save actions will fail because the cache is immutable but it's not a problem.

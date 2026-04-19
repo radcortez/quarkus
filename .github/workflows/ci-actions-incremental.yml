@@ -344,7 +344,7 @@ jobs:
           distribution: temurin
           java-version: 17
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         if: (github.event_name != 'push' && github.event_name != 'schedule') || github.actor == 'dependabot[bot]'
         with:
           path: ~/.m2/repository
@@ -611,7 +611,7 @@ jobs:
           architecture: ${{ matrix.java.architecture || 'x64' }}
 
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ needs.configure.outputs.m2-cache-key }}
@@ -759,7 +759,7 @@ jobs:
       - name: Add quarkusio remote for GIB
         run: git remote show quarkusio &> /dev/null || git remote add quarkusio https://github.com/quarkusio/quarkus.git
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ needs.configure.outputs.m2-cache-key }}
@@ -868,7 +868,7 @@ jobs:
         run: git config --global core.longpaths true
       - uses: actions/checkout@v6
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ needs.configure.outputs.m2-cache-key }}
@@ -973,7 +973,7 @@ jobs:
         run: git config --global core.longpaths true
       - uses: actions/checkout@v6
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ needs.configure.outputs.m2-cache-key }}
@@ -1082,7 +1082,7 @@ jobs:
         run: git config --global core.longpaths true
       - uses: actions/checkout@v6
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ needs.configure.outputs.m2-cache-key }}
@@ -1171,7 +1171,7 @@ jobs:
           echo "GE_CUSTOM_VALUES=gh-job-name=Quickstarts Compilation - JDK ${{matrix.java.name}}" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ needs.configure.outputs.m2-cache-key }}
@@ -1270,7 +1270,7 @@ jobs:
           echo "GE_CUSTOM_VALUES=gh-job-name=Platform Tests - JDK ${{matrix.java.name}}" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ needs.configure.outputs.m2-cache-key }}
@@ -1363,7 +1363,7 @@ jobs:
           echo "GE_CUSTOM_VALUES=gh-job-name=Native Tests - Virtual Thread - ${{matrix.category}}" >> "$GITHUB_ENV"
       - uses: actions/checkout@v6
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ needs.configure.outputs.m2-cache-key }}
@@ -1451,7 +1451,7 @@ jobs:
           distribution: temurin
           java-version: 21
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ needs.configure.outputs.m2-cache-key }}
@@ -1572,7 +1572,7 @@ jobs:
             cat <<< $(jq '.HttpHeaders += {"User-Agent": "Quarkus-CI-Docker-Client"}' ~/.docker/config.json) > ~/.docker/config.json
           fi
       - name: Restore Maven Repository
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         with:
           path: ~/.m2/repository
           key: ${{ needs.configure.outputs.m2-cache-key }}
@@ -1604,7 +1604,7 @@ jobs:
           # The key is restored from default branch if not found, but still branch specific to override the default after first run
           restore-keys: ${{ needs.configure.outputs.quarkus-metadata-cache-key-default }}
       - name: Cache Quarkus metadata
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v5.0.4
         if: github.event_name == 'pull_request'
         with:
           path: '**/.quarkus/quarkus-prod-config-dump'
