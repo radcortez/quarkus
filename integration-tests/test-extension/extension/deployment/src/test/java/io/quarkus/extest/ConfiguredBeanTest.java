@@ -95,7 +95,6 @@ public class ConfiguredBeanTest {
         Optional<ConfigSource> source = config.getConfigSource("Runtime Values");
         assertTrue(source.isPresent());
         ConfigSource runtimeValues = source.get();
-        assertEquals(0, runtimeValues.getOrdinal());
 
         ConfigSource applicationProperties = null;
         for (ConfigSource configSource : config.getConfigSources()) {

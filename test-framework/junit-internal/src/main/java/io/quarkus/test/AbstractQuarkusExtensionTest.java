@@ -68,6 +68,7 @@ import io.quarkus.maven.dependency.Dependency;
 import io.quarkus.runner.bootstrap.AugmentActionImpl;
 import io.quarkus.runner.bootstrap.StartupActionImpl;
 import io.quarkus.runtime.LaunchMode;
+import io.quarkus.runtime.configuration.ConfigSourceOrdinal;
 import io.quarkus.test.common.GroovyClassValue;
 import io.quarkus.test.common.PathTestHelper;
 import io.quarkus.test.common.PropertyTestUtil;
@@ -695,15 +696,16 @@ public class AbstractQuarkusExtensionTest<S extends AbstractQuarkusExtensionTest
                 for (Consumer<QuarkusBootstrap.Builder> bootstrapCustomizer : bootstrapCustomizers) {
                     bootstrapCustomizer.accept(builder);
                 }
-                curatedApplication = builder.build().bootstrap();
-
-                StartupActionImpl startupAction = new AugmentActionImpl(curatedApplication, customizers, classLoadListeners)
-                        .createInitialRuntimeApplication();
-                Map<String, String> overriddenConfig = new HashMap<>(testResourceManager.getConfigProperties());
+                Properties overriddenConfig = new Properties();
+                overriddenConfig.put("config_ordinal", ConfigSourceOrdinal.STARTUP_OVERRIDE.getOrdinal());
+                overriddenConfig.putAll(testResourceManager.getConfigProperties());
                 if (customRuntimeApplicationProperties != null) {
                     overriddenConfig.putAll(customRuntimeApplicationProperties);
                 }
-                startupAction.overrideConfig(overriddenConfig);
+                builder.setRuntimeProperties(overriddenConfig);
+                curatedApplication = builder.build().bootstrap();
+                StartupActionImpl startupAction = new AugmentActionImpl(curatedApplication, customizers, classLoadListeners)
+                        .createInitialRuntimeApplication();
                 runningQuarkusApplication = startupAction.run(commandLineParameters);
                 //we restore the CL at the end of the test
                 Thread.currentThread().setContextClassLoader(runningQuarkusApplication.getClassLoader());
