@@ -9,8 +9,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
+import io.smallrye.config.Config;
 
 public class DeploymentUtil {
 
@@ -26,8 +25,7 @@ public class DeploymentUtil {
      * @return a {@link List} with all available deployers.
      */
     public static List<String> getDeployers() {
-        Config config = ConfigProvider.getConfig();
-        return StreamSupport.stream(config.getPropertyNames().spliterator(), false)
+        return StreamSupport.stream(Config.get().getPropertyNames().spliterator(), false)
                 .map(QUARKUS_DEPLOY_PATTERN::matcher)
                 .filter(Matcher::matches)
                 .map(m -> m.group(1))
@@ -38,7 +36,7 @@ public class DeploymentUtil {
      * @return a {@link Predicate} that tests if deployer is enabled.
      */
     public static Predicate<String> isDeployExplicitlyEnabled() {
-        return deployer -> ConfigProvider.getConfig().getOptionalValue(String.format(DEPLOY, deployer), Boolean.class)
+        return deployer -> Config.get().getOptionalValue(String.format(DEPLOY, deployer), Boolean.class)
                 .orElse(false);
     }
 

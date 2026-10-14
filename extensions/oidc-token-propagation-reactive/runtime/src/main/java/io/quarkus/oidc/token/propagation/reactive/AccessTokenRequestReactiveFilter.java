@@ -15,7 +15,6 @@ import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.client.impl.RestClientRequestContext;
 import org.jboss.resteasy.reactive.client.spi.ResteasyReactiveClientRequestContext;
@@ -32,6 +31,7 @@ import io.quarkus.security.credential.TokenCredential;
 import io.quarkus.security.spi.runtime.MethodDescription;
 import io.quarkus.vertx.core.runtime.ContextLocalsVertxServiceProvider;
 import io.quarkus.vertx.core.runtime.context.VertxContextSafetyToggle;
+import io.smallrye.config.Config;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Vertx;
 
@@ -58,7 +58,7 @@ public class AccessTokenRequestReactiveFilter implements ResteasyReactiveClientR
             OidcClients clients = Arc.container().instance(OidcClients.class).get();
             String clientName = getClientName();
             exchangeTokenClient = clientName != null ? clients.getClient(clientName) : clients.getClient();
-            Grant.Type exchangeTokenGrantType = ConfigProvider.getConfig()
+            Grant.Type exchangeTokenGrantType = Config.get()
                     .getValue(
                             "quarkus.oidc-client." + (clientName != null ? clientName + "." : "")
                                     + "grant.type",
@@ -75,7 +75,7 @@ public class AccessTokenRequestReactiveFilter implements ResteasyReactiveClientR
     }
 
     protected boolean isExchangeToken() {
-        return ConfigProvider.getConfig()
+        return Config.get()
                 .getValue("quarkus.rest-client-oidc-token-propagation.exchange-token", boolean.class);
     }
 
@@ -119,8 +119,7 @@ public class AccessTokenRequestReactiveFilter implements ResteasyReactiveClientR
     }
 
     protected String getClientName() {
-        return ConfigProvider
-                .getConfig()
+        return Config.get()
                 .getOptionalValue("quarkus.rest-client-oidc-token-propagation.client-name", String.class)
                 .orElse(null);
     }

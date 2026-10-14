@@ -32,7 +32,7 @@ public final class QuarkusConfigFactory extends SmallRyeConfigFactory {
         // Install new config
         if (config != null) {
             QuarkusConfigFactory.config = config;
-            // Someone may have called ConfigProvider.getConfig which automatically registers a Config in the TCCL
+            // Someone may have called Config.get which automatically registers a Config in the TCCL
             configProviderResolver.releaseConfig(Thread.currentThread().getContextClassLoader());
             configProviderResolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
         }

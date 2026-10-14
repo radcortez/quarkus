@@ -21,7 +21,6 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
@@ -43,6 +42,7 @@ import io.quarkus.runtime.console.ConsoleRuntimeConfig;
 import io.quarkus.runtime.logging.LogRuntimeConfig.CategoryConfig;
 import io.quarkus.runtime.logging.LogRuntimeConfig.CleanupFilterConfig;
 import io.quarkus.runtime.shutdown.ShutdownListener;
+import io.smallrye.config.Config;
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
@@ -79,7 +79,7 @@ public class LoggingSetupRecorder {
     }
 
     public static void handleFailedStart(RuntimeValue<Optional<Supplier<String>>> banner) {
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+        Config config = Config.get();
         // There may be cases where a Config with the mappings is already available, but we can't be sure, so we wrap
         // the original Config and map the logging classes.
         SmallRyeConfig loggingConfig = new SmallRyeConfigBuilder()

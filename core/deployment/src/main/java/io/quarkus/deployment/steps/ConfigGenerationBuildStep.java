@@ -35,7 +35,6 @@ import java.util.function.BooleanSupplier;
 
 import jakarta.annotation.Priority;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
@@ -812,7 +811,7 @@ public class ConfigGenerationBuildStep {
     public void watchConfigFiles(BuildProducer<HotDeploymentWatchedFileBuildItem> watchedFiles) {
         List<String> configWatchedFiles = new ArrayList<>();
 
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
+        Config config = Config.get();
         String userDir = System.getProperty("user.dir");
 
         // Main files
@@ -914,8 +913,7 @@ public class ConfigGenerationBuildStep {
     @BuildStep(onlyIf = NativeOrNativeSourcesBuild.class)
     @Record(ExecutionTime.RUNTIME_INIT)
     void warnDifferentProfileUsedBetweenBuildAndRunTime(ConfigRecorder configRecorder) {
-        SmallRyeConfig config = ConfigProvider.getConfig().unwrap(SmallRyeConfig.class);
-        configRecorder.handleNativeProfileChange(config.getProfiles());
+        configRecorder.handleNativeProfileChange(Config.get().getProfiles());
     }
 
     @BuildStep(onlyIf = IsProduction.class)

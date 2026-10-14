@@ -2,16 +2,15 @@ package org.acme;
 
 import java.util.Map;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-
 import io.quarkus.test.junit.QuarkusTestProfile;
+import io.smallrye.config.Config;
 
 public class SomeProfile implements QuarkusTestProfile {
     @Override
     public Map<String, String> getConfigOverrides() {
 
         // Access config
-        ConfigProvider.getConfig().getPropertyNames();
+        Config.get().getPropertyNames();
 
         return QuarkusTestProfile.super.getConfigOverrides();
     }

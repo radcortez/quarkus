@@ -3,9 +3,8 @@ package io.quarkus.test.common;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.microprofile.config.Config;
-
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
+import io.smallrye.config.Config;
 
 public final class TestConfigUtil {
 
@@ -38,7 +37,7 @@ public final class TestConfigUtil {
     /**
      * Clean up config left over from badly-behaving previous tests.
      * <p>
-     * Tests may call ConfigProvider.getConfig() directly or indirectly,
+     * Tests may call Config.get() directly or indirectly,
      * triggering lazy initialization in QuarkusConfigFactory#getConfigFor,
      * and if they don't call QuarkusConfigFactory.setConfig(null) afterward,
      * they may leak that config.

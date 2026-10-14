@@ -188,7 +188,7 @@ public final class DevServicesRegistryBuildItem extends SimpleBuildItem {
 
             String missingDependency = null;
 
-            // The config from the new sources isn't easily available via ConfigProvider.getConfig(), so directly inject it into services which depend on it
+            // The config from the new sources isn't easily available via Config.get(), so directly inject it into services which depend on it
             var dependencies = request.getDependencies();
             if (dependencies != null && !dependencies.isEmpty()) {
                 for (DevServicesResultBuildItem.DevServiceConfigDependency<? extends Startable> dependency : dependencies) {
