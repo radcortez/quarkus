@@ -263,7 +263,7 @@ public abstract class CommonProcessor<C extends CommonConfig> {
         if (containerImageConfig.username().isPresent() && containerImageConfig.password().isPresent()) {
             ProcessBuilder.newBuilder(executableName)
                     .arguments("login", registry, "-u", containerImageConfig.username().get(), "-p",
-                            containerImageConfig.password().get())
+                            containerImageConfig.password().get().get())
                     .error().logOnSuccess(false).inherited()
                     .run();
         }

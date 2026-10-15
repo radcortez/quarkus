@@ -12,6 +12,7 @@ import java.util.TreeMap;
 
 import io.quarkus.runtime.annotations.ConfigGroup;
 import io.smallrye.certs.pem.parsers.EncryptedPKCS8Parser;
+import io.smallrye.config.Secret;
 import io.smallrye.config.WithParentName;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.PemKeyCertOptions;
@@ -67,7 +68,7 @@ public interface PemKeyCertConfig {
             if (config.password().isPresent()) {
                 byte[] content = read(config.key());
                 String contentAsString = new String(content, StandardCharsets.UTF_8);
-                Buffer decrypted = new EncryptedPKCS8Parser().decryptKey(contentAsString, config.password().get());
+                Buffer decrypted = new EncryptedPKCS8Parser().decryptKey(contentAsString, config.password().get().get());
                 if (decrypted == null) {
                     throw new IllegalArgumentException("Unable to decrypt the key file: " + config.key());
                 }
@@ -94,7 +95,7 @@ public interface PemKeyCertConfig {
         /**
          * When the key is encrypted (encrypted PKCS#8), the password to decrypt it.
          */
-        Optional<String> password();
+        Optional<Secret<String>> password();
     }
 
 }

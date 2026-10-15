@@ -21,6 +21,7 @@ import io.quarkus.tls.TlsConfigurationRegistry;
 import io.smallrye.certs.Format;
 import io.smallrye.certs.junit5.Certificate;
 import io.smallrye.certs.junit5.Certificates;
+import io.smallrye.config.Secret;
 import io.vertx.mutiny.core.Vertx;
 
 @Certificates(baseDir = "target/certs", certificates = {
@@ -173,7 +174,7 @@ public class FakeSmtpTestBase {
         }
 
         @Override
-        public Optional<String> password() {
+        public Optional<Secret<String>> password() {
             return Optional.empty();
         }
 

@@ -7,6 +7,7 @@ import java.util.Set;
 
 import io.quarkus.vertx.http.security.CSRF;
 import io.smallrye.config.Config;
+import io.smallrye.config.Secret;
 
 public final class RestCsrfBuilder implements CSRF.Builder {
 
@@ -20,7 +21,7 @@ public final class RestCsrfBuilder implements CSRF.Builder {
     private boolean cookieHttpOnly;
     private Optional<Set<String>> createTokenPath;
     private int tokenSize;
-    private Optional<String> tokenSignatureKey;
+    private Optional<Secret<String>> tokenSignatureKey;
     private boolean verifyToken;
     private boolean requireFormUrlEncoded;
 
@@ -120,7 +121,8 @@ public final class RestCsrfBuilder implements CSRF.Builder {
 
     @Override
     public CSRF.Builder tokenSignatureKey(String tokenSignatureKey) {
-        this.tokenSignatureKey = Optional.of(requireNonNull(tokenSignatureKey, "Token signature key"));
+        String key = requireNonNull(tokenSignatureKey, "Token signature key");
+        this.tokenSignatureKey = Optional.of(() -> key);
         return this;
     }
 
@@ -135,7 +137,7 @@ public final class RestCsrfBuilder implements CSRF.Builder {
         record CSRFImpl(String formFieldName, String tokenHeaderName, String cookieName, Duration cookieMaxAge,
                 String cookiePath, Optional<String> cookieDomain, boolean cookieForceSecure,
                 boolean cookieHttpOnly, Optional<Set<String>> createTokenPath, int tokenSize,
-                Optional<String> tokenSignatureKey, boolean verifyToken,
+                Optional<Secret<String>> tokenSignatureKey, boolean verifyToken,
                 boolean requireFormUrlEncoded) implements RestCsrfConfig, CSRF {
         }
         return new CSRFImpl(formFieldName, tokenHeaderName, cookieName, cookieMaxAge, cookiePath, cookieDomain,

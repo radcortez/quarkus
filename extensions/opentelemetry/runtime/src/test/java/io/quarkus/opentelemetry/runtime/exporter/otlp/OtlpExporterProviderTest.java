@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import io.opentelemetry.sdk.common.export.MemoryMode;
 import io.quarkus.opentelemetry.runtime.config.runtime.exporter.*;
+import io.smallrye.config.Secret;
 
 class OtlpExporterProviderTest {
 
@@ -259,7 +260,7 @@ class OtlpExporterProviderTest {
                             }
 
                             @Override
-                            public Optional<String> password() {
+                            public Optional<Secret<String>> password() {
                                 return Optional.empty();
                             }
 

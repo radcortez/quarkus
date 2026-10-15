@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import io.quarkus.keycloak.admin.client.common.runtime.KeycloakAdminClientConfig;
 import io.quarkus.keycloak.admin.client.common.runtime.KeycloakAdminClientConfigUtil;
+import io.smallrye.config.Secret;
 
 public class ConfigValidationTest {
 
@@ -52,7 +53,7 @@ public class ConfigValidationTest {
         config.clientId = "client id";
         config.clientSecret = Optional.empty();
         config.username = Optional.of("john");
-        config.password = Optional.of("pwd");
+        config.password = Optional.of(() -> "pwd");
         config.realm = "master";
         config.scope = Optional.empty();
         return config;
@@ -63,15 +64,15 @@ public class ConfigValidationTest {
         config.grantType = KeycloakAdminClientConfig.GrantType.CLIENT_CREDENTIALS;
         config.password = Optional.empty();
         config.username = Optional.empty();
-        config.clientSecret = Optional.of("client secret");
+        config.clientSecret = Optional.of(() -> "client secret");
         return config;
     }
 
     private static final class KeycloakAdminClientConfigImpl implements KeycloakAdminClientConfig {
 
-        private Optional<String> password;
+        private Optional<Secret<String>> password;
         private Optional<String> username;
-        private Optional<String> clientSecret;
+        private Optional<Secret<String>> clientSecret;
         private Optional<String> scope;
         private Optional<String> serverUrl;
         private String realm;
@@ -94,7 +95,7 @@ public class ConfigValidationTest {
         }
 
         @Override
-        public Optional<String> clientSecret() {
+        public Optional<Secret<String>> clientSecret() {
             return clientSecret;
         }
 
@@ -104,7 +105,7 @@ public class ConfigValidationTest {
         }
 
         @Override
-        public Optional<String> password() {
+        public Optional<Secret<String>> password() {
             return password;
         }
 

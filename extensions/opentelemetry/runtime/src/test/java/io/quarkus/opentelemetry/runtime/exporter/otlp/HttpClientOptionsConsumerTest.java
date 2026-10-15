@@ -22,6 +22,7 @@ import io.quarkus.opentelemetry.runtime.config.runtime.exporter.CompressionType;
 import io.quarkus.opentelemetry.runtime.config.runtime.exporter.OtlpExporterTracesConfig;
 import io.quarkus.tls.TlsConfiguration;
 import io.quarkus.tls.TlsConfigurationRegistry;
+import io.smallrye.config.Secret;
 import io.vertx.core.http.HttpClientOptions;
 
 class HttpClientOptionsConsumerTest {
@@ -165,8 +166,8 @@ class HttpClientOptionsConsumerTest {
                     }
 
                     @Override
-                    public Optional<String> password() {
-                        return Optional.of("proxy-password");
+                    public Optional<Secret<String>> password() {
+                        return Optional.of(() -> "proxy-password");
                     }
 
                     @Override
