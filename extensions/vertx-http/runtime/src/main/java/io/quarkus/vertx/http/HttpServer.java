@@ -3,6 +3,7 @@ package io.quarkus.vertx.http;
 import java.net.URI;
 import java.util.Optional;
 
+import io.quarkus.runtime.Address;
 import io.quarkus.value.registry.ValueRegistry;
 import io.quarkus.value.registry.ValueRegistry.RuntimeInfo;
 import io.quarkus.value.registry.ValueRegistry.RuntimeKey;
@@ -21,6 +22,11 @@ public interface HttpServer {
     RuntimeKey<URI> LOCAL_MANAGEMENT_BASE_URI = RuntimeKey.key("quarkus.management.local-base-uri");
 
     RuntimeKey<HttpServer> HTTP_SERVER = RuntimeKey.key(HttpServer.class);
+
+    /** The name of the main HTTP listener, as in {@code quarkus://vertx-http} or {@code @Named("vertx-http")}. */
+    String ADDRESS = "vertx-http";
+    /** The name of the management interface listener. */
+    String MANAGEMENT_ADDRESS = "vertx-management";
 
     /**
      * Return the http port that Quarkus is listening on.
@@ -57,6 +63,28 @@ public interface HttpServer {
      *         management interface is not enabled.
      */
     Optional<URI> getManagementBaseUri();
+
+    /**
+     * The {@link Address} of the main HTTP listener. It is {@link #getLocalBaseUri()}, so it follows the same rule as
+     * {@code test.url}: HTTPS when TLS is on and insecure requests are not enabled, HTTP otherwise.
+     *
+     * @return the address, or empty when the server is not listening on a TCP socket (for instance, virtual only)
+     */
+    default Optional<Address> getAddress() {
+        if (getPort() <= 0 && getSecurePort() <= 0) {
+            return Optional.empty();
+        }
+        return Optional.of(new Address(getLocalBaseUri()));
+    }
+
+    /**
+     * The {@link Address} of the management interface listener.
+     *
+     * @return the address, or empty when the management interface is not enabled
+     */
+    default Optional<Address> getManagementAddress() {
+        return getManagementBaseUri().map(Address::new);
+    }
 
     /**
      * The {@link RuntimeInfo} implementation for {@link HttpServer}. Construct instances of {@link HttpServer} with
