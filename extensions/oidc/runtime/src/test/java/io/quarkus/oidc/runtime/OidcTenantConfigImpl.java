@@ -397,13 +397,13 @@ final class OidcTenantConfigImpl implements OidcTenantConfig {
             @Override
             public Duration refreshTokenCacheTimeToLive() {
                 invocationsRecorder.put(ConfigMappingMethods.REFRESH_TOKEN_CACHE_TIME_TO_LIVE, true);
-                return null;
+                return Duration.ofSeconds(1);
             }
 
             @Override
             public Duration forcedJwkRefreshInterval() {
                 invocationsRecorder.put(ConfigMappingMethods.TOKEN_FORCED_JWK_REFRESH_INTERNAL, true);
-                return null;
+                return Duration.ofSeconds(1);
             }
 
             @Override
@@ -551,7 +551,7 @@ final class OidcTenantConfigImpl implements OidcTenantConfig {
                     @Override
                     public Duration tokenCacheTimeToLive() {
                         invocationsRecorder.put(ConfigMappingMethods.LOGOUT_BACK_CHANNEL_TOKEN_CACHE_TTL, true);
-                        return null;
+                        return Duration.ofSeconds(1);
                     }
 
                     @Override
@@ -842,13 +842,13 @@ final class OidcTenantConfigImpl implements OidcTenantConfig {
             @Override
             public Optional<Duration> sessionAgeExtension() {
                 invocationsRecorder.put(ConfigMappingMethods.AUTHENTICATION_SESSION_AGE_EXTENSION, true);
-                return null;
+                return Optional.of(Duration.ofSeconds(1));
             }
 
             @Override
             public Duration stateCookieAge() {
                 invocationsRecorder.put(ConfigMappingMethods.AUTHENTICATION_STATE_COOKIE_AGE, true);
-                return null;
+                return Duration.ofSeconds(1);
             }
 
             @Override
@@ -1016,7 +1016,7 @@ final class OidcTenantConfigImpl implements OidcTenantConfig {
             @Override
             public Duration cacheTimeToLive() {
                 invocationsRecorder.put(ConfigMappingMethods.JWKS_CACHE_TIME_TO_LIVE, true);
-                return null;
+                return Duration.ofSeconds(1);
             }
 
             @Override
@@ -1301,7 +1301,7 @@ final class OidcTenantConfigImpl implements OidcTenantConfig {
     @Override
     public String discoveryPath() {
         invocationsRecorder.put(ConfigMappingMethods.DISCOVERY_PATH, true);
-        return null;
+        return "value";
     }
 
     @Override
@@ -1331,7 +1331,7 @@ final class OidcTenantConfigImpl implements OidcTenantConfig {
     @Override
     public Duration connectionTimeout() {
         invocationsRecorder.put(ConfigMappingMethods.CONNECTION_TIMEOUT, true);
-        return null;
+        return Duration.ofSeconds(1);
     }
 
     @Override

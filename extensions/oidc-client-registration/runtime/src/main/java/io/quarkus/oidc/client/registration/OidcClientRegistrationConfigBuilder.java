@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import io.quarkus.oidc.client.registration.runtime.OidcClientRegistrationsConfig;
 import io.quarkus.oidc.common.runtime.config.OidcCommonConfigBuilder;
+import io.smallrye.config.ConfigInstanceBuilder;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
 /**
@@ -16,52 +17,14 @@ import io.smallrye.config.SmallRyeConfigBuilder;
  */
 public final class OidcClientRegistrationConfigBuilder extends OidcCommonConfigBuilder<OidcClientRegistrationConfigBuilder> {
 
-    private record MetadataImpl(Optional<String> clientName, Optional<String> redirectUri, Optional<String> postLogoutUri,
-            Map<String, String> extraProps) implements OidcClientRegistrationConfig.Metadata {
-
-    }
-
-    private static final class OidcClientRegistrationConfigImpl extends OidcCommonConfigImpl
-            implements OidcClientRegistrationConfig {
-        private final Optional<String> id;
-        private final boolean registrationEnabled;
-        private final boolean registerEarly;
-        private final Optional<String> initialToken;
-        private final Metadata metadata;
-
-        private OidcClientRegistrationConfigImpl(OidcClientRegistrationConfigBuilder builder) {
-            super(builder);
-            this.id = builder.id;
-            this.registrationEnabled = builder.registrationEnabled;
-            this.registerEarly = builder.registerEarly;
-            this.initialToken = builder.initialToken;
-            this.metadata = builder.metadata;
-        }
-
-        @Override
-        public Optional<String> id() {
-            return id;
-        }
-
-        @Override
-        public boolean registrationEnabled() {
-            return registrationEnabled;
-        }
-
-        @Override
-        public boolean registerEarly() {
-            return registerEarly;
-        }
-
-        @Override
-        public Optional<String> initialToken() {
-            return initialToken;
-        }
-
-        @Override
-        public Metadata metadata() {
-            return metadata;
-        }
+    private static OidcClientRegistrationConfig create(OidcClientRegistrationConfigBuilder builder) {
+        return commonConfig(OidcClientRegistrationConfig.class, builder)
+                .with(OidcClientRegistrationConfig::id, builder.id)
+                .with(OidcClientRegistrationConfig::registrationEnabled, builder.registrationEnabled)
+                .with(OidcClientRegistrationConfig::registerEarly, builder.registerEarly)
+                .with(OidcClientRegistrationConfig::initialToken, builder.initialToken)
+                .with(OidcClientRegistrationConfig::metadata, builder.metadata)
+                .build();
     }
 
     /**
@@ -176,7 +139,7 @@ public final class OidcClientRegistrationConfigBuilder extends OidcCommonConfigB
      * @return OidcClientRegistrationConfig
      */
     public OidcClientRegistrationConfig build() {
-        return new OidcClientRegistrationConfigImpl(this);
+        return create(this);
     }
 
     public static final class MetadataBuilder {
@@ -196,7 +159,12 @@ public final class OidcClientRegistrationConfigBuilder extends OidcCommonConfigB
         }
 
         public OidcClientRegistrationConfig.Metadata build() {
-            return new MetadataImpl(clientName, redirectUri, postLogoutUri, extraProps);
+            return ConfigInstanceBuilder.forInterface(OidcClientRegistrationConfig.Metadata.class)
+                    .with(OidcClientRegistrationConfig.Metadata::clientName, clientName)
+                    .with(OidcClientRegistrationConfig.Metadata::redirectUri, redirectUri)
+                    .with(OidcClientRegistrationConfig.Metadata::postLogoutUri, postLogoutUri)
+                    .with(OidcClientRegistrationConfig.Metadata::extraProps, extraProps)
+                    .build();
         }
 
         public OidcClientRegistrationConfigBuilder end() {

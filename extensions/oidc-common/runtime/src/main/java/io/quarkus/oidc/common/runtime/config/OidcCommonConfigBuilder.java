@@ -1,109 +1,46 @@
 package io.quarkus.oidc.common.runtime.config;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import io.smallrye.config.ConfigInstanceBuilder;
+
 public abstract class OidcCommonConfigBuilder<T> {
 
-    private record TlsImpl(Optional<String> tlsConfigurationName) implements OidcCommonConfig.Tls {
-        private TlsImpl(String tlsConfigurationName) {
-            this(Optional.ofNullable(tlsConfigurationName));
-        }
+    private static OidcCommonConfig.Tls tlsConfig(String tlsConfigurationName) {
+        return ConfigInstanceBuilder.forInterface(OidcCommonConfig.Tls.class)
+                .with(OidcCommonConfig.Tls::tlsConfigurationName, Optional.ofNullable(tlsConfigurationName))
+                .build();
     }
 
-    private record ProxyImpl(Optional<String> proxyConfigurationName) implements OidcCommonConfig.Proxy {
+    private static OidcCommonConfig.Proxy proxyConfig(Optional<String> proxyConfigurationName) {
+        return ConfigInstanceBuilder.forInterface(OidcCommonConfig.Proxy.class)
+                .with(OidcCommonConfig.Proxy::proxyConfigurationName, proxyConfigurationName)
+                .build();
     }
 
-    protected static class OidcCommonConfigImpl implements OidcCommonConfig {
+    protected static <E> Optional<List<E>> optionalListOf(Collection<E> values) {
+        return values.isEmpty() ? Optional.empty() : Optional.of(List.copyOf(values));
+    }
 
-        private final Optional<String> authServerUrl;
-        private final String discoveryPath;
-        private final Optional<Boolean> discoveryEnabled;
-        private final Optional<String> registrationPath;
-        private final Optional<Duration> connectionDelay;
-        private final int connectionRetryCount;
-        private final Duration connectionTimeout;
-        private final boolean useBlockingDnsLookup;
-        private final OptionalInt maxPoolSize;
-        private final boolean followRedirects;
-        private final Proxy proxy;
-        private final Tls tls;
-
-        protected OidcCommonConfigImpl(OidcCommonConfigBuilder<?> builder) {
-            this.authServerUrl = builder.authServerUrl;
-            this.discoveryPath = builder.discoveryPath;
-            this.discoveryEnabled = builder.discoveryEnabled;
-            this.registrationPath = builder.registrationPath;
-            this.connectionDelay = builder.connectionDelay;
-            this.connectionRetryCount = builder.connectionRetryCount;
-            this.connectionTimeout = builder.connectionTimeout;
-            this.useBlockingDnsLookup = builder.useBlockingDnsLookup;
-            this.maxPoolSize = builder.maxPoolSize;
-            this.followRedirects = builder.followRedirects;
-            this.proxy = new ProxyImpl(builder.proxyConfigurationName);
-            this.tls = builder.tls;
-        }
-
-        @Override
-        public Optional<String> authServerUrl() {
-            return authServerUrl;
-        }
-
-        @Override
-        public String discoveryPath() {
-            return discoveryPath;
-        }
-
-        @Override
-        public Optional<Boolean> discoveryEnabled() {
-            return discoveryEnabled;
-        }
-
-        @Override
-        public Optional<String> registrationPath() {
-            return registrationPath;
-        }
-
-        @Override
-        public Optional<Duration> connectionDelay() {
-            return connectionDelay;
-        }
-
-        @Override
-        public int connectionRetryCount() {
-            return connectionRetryCount;
-        }
-
-        @Override
-        public Duration connectionTimeout() {
-            return connectionTimeout;
-        }
-
-        @Override
-        public boolean useBlockingDnsLookup() {
-            return useBlockingDnsLookup;
-        }
-
-        @Override
-        public OptionalInt maxPoolSize() {
-            return maxPoolSize;
-        }
-
-        @Override
-        public boolean followRedirects() {
-            return followRedirects;
-        }
-
-        @Override
-        public Proxy proxy() {
-            return proxy;
-        }
-
-        @Override
-        public Tls tls() {
-            return tls;
-        }
+    protected static <I extends OidcCommonConfig> ConfigInstanceBuilder<I> commonConfig(Class<I> type,
+            OidcCommonConfigBuilder<?> builder) {
+        return ConfigInstanceBuilder.forInterface(type)
+                .with(OidcCommonConfig::authServerUrl, builder.authServerUrl)
+                .with(OidcCommonConfig::discoveryPath, builder.discoveryPath)
+                .with(OidcCommonConfig::discoveryEnabled, builder.discoveryEnabled)
+                .with(OidcCommonConfig::registrationPath, builder.registrationPath)
+                .with(OidcCommonConfig::connectionDelay, builder.connectionDelay)
+                .with(OidcCommonConfig::connectionRetryCount, builder.connectionRetryCount)
+                .with(OidcCommonConfig::connectionTimeout, builder.connectionTimeout)
+                .with(OidcCommonConfig::useBlockingDnsLookup, builder.useBlockingDnsLookup)
+                .with(OidcCommonConfig::maxPoolSize, builder.maxPoolSize)
+                .with(OidcCommonConfig::followRedirects, builder.followRedirects)
+                .with(OidcCommonConfig::proxy, proxyConfig(builder.proxyConfigurationName))
+                .with(OidcCommonConfig::tls, builder.tls);
     }
 
     private Optional<String> authServerUrl;
@@ -245,7 +182,7 @@ public abstract class OidcCommonConfigBuilder<T> {
      * @return T builder
      */
     public T tlsConfigurationName(String tlsConfigurationName) {
-        this.tls = new TlsImpl(tlsConfigurationName);
+        this.tls = tlsConfig(tlsConfigurationName);
         return getBuilder();
     }
 
