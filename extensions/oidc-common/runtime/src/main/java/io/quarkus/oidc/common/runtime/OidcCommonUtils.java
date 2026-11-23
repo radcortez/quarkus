@@ -507,17 +507,17 @@ public class OidcCommonUtils {
 
     public static Uni<String> clientSecret(Credentials creds) {
         if (creds.secret().isPresent()) {
-            return Uni.createFrom().item(creds.secret().get());
+            return Uni.createFrom().item(creds.secret().get().get());
         }
         if (creds.clientSecret().value().isPresent()) {
-            return Uni.createFrom().item(creds.clientSecret().value().get());
+            return Uni.createFrom().item(creds.clientSecret().value().get().get());
         }
         return fromCredentialsProvider(creds.clientSecret().provider());
     }
 
     public static Uni<String> jwtSecret(Credentials creds) {
         if (creds.jwt().secret().isPresent()) {
-            return Uni.createFrom().item(creds.jwt().secret().get());
+            return Uni.createFrom().item(creds.jwt().secret().get().get());
         }
         return fromCredentialsProvider(creds.jwt().secretProvider());
     }
@@ -549,7 +549,7 @@ public class OidcCommonUtils {
             Key key = null;
             try {
                 if (creds.jwt().key().isPresent()) {
-                    key = KeyUtils.tryAsPemSigningPrivateKey(creds.jwt().key().get(),
+                    key = KeyUtils.tryAsPemSigningPrivateKey(creds.jwt().key().get().get(),
                             getSignatureAlgorithm(creds, SignatureAlgorithm.RS256));
                 } else if (creds.jwt().keyFile().isPresent()) {
                     key = KeyUtils.readSigningKey(creds.jwt().keyFile().get(), creds.jwt().keyId().orElse(null),
@@ -560,13 +560,13 @@ public class OidcCommonUtils {
                     InputStream is = ResourceUtils.getResourceStream(keyStoreFile);
 
                     if (creds.jwt().keyStorePassword().isPresent()) {
-                        ks.load(is, creds.jwt().keyStorePassword().get().toCharArray());
+                        ks.load(is, creds.jwt().keyStorePassword().get().get().toCharArray());
                     } else {
                         ks.load(is, null);
                     }
 
                     if (creds.jwt().keyPassword().isPresent()) {
-                        key = ks.getKey(creds.jwt().keyId().get(), creds.jwt().keyPassword().get().toCharArray());
+                        key = ks.getKey(creds.jwt().keyId().get(), creds.jwt().keyPassword().get().get().toCharArray());
                     } else {
                         throw new ConfigurationException(
                                 "When using a key store, the `quarkus.oidc-client.credentials.jwt.key-password` property must be set");

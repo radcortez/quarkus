@@ -19,6 +19,7 @@ import io.quarkus.devservices.keycloak.KeycloakDevServicesRequiredBuildItem;
 import io.quarkus.devui.spi.page.CardPageBuildItem;
 import io.quarkus.oidc.client.registration.deployment.OidcClientRegistrationBuildStep;
 import io.smallrye.config.Config;
+import io.smallrye.config.SecretKeys;
 
 @BuildSteps(onlyIf = { IsDevServicesSupportedByLaunchMode.class, OidcClientRegistrationBuildStep.IsEnabled.class,
         DevServicesConfig.Enabled.class })
@@ -72,7 +73,8 @@ public class KeycloakDevServiceRequiredBuildStep {
     }
 
     private static String getInitialToken() {
-        return Config.get().getOptionalValue("quarkus.oidc-client-registration.initial-token", String.class)
+        return SecretKeys.doUnlocked(
+                () -> Config.get().getOptionalValue("quarkus.oidc-client-registration.initial-token", String.class))
                 .orElse(null);
     }
 }

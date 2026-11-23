@@ -11,6 +11,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.oidc.client.registration.OidcClientRegistrationConfigBuilder.MetadataBuilder;
+import io.smallrye.config.Secret;
 
 public class OidcClientRegistrationConfigBuilderTest {
 
@@ -82,7 +83,7 @@ public class OidcClientRegistrationConfigBuilderTest {
         assertEquals("pink", config.id().orElse(null));
         assertFalse(config.registrationEnabled());
         assertFalse(config.registerEarly());
-        assertEquals("floyd", config.initialToken().orElse(null));
+        assertEquals("floyd", config.initialToken().map(Secret::get).orElse(null));
         assertNotNull(config.metadata());
         assertEquals("another", config.metadata().clientName().orElse(null));
         assertEquals("brick", config.metadata().redirectUri().orElse(null));
@@ -155,7 +156,7 @@ public class OidcClientRegistrationConfigBuilderTest {
         assertEquals("any", newConfig.id().orElse(null));
         assertFalse(newConfig.registrationEnabled());
         assertTrue(newConfig.registerEarly());
-        assertEquals("floyd", newConfig.initialToken().orElse(null));
+        assertEquals("floyd", newConfig.initialToken().map(Secret::get).orElse(null));
 
         assertNotNull(newConfig.metadata());
         assertEquals("place", newConfig.metadata().clientName().orElse(null));

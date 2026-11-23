@@ -17,6 +17,7 @@ import io.quarkus.test.common.DevServicesContext;
 import io.restassured.RestAssured;
 import io.restassured.specification.RequestSpecification;
 import io.smallrye.config.Config;
+import io.smallrye.config.SecretKeys;
 
 public class KeycloakTestClient implements DevServicesContext.ContextAware {
 
@@ -415,7 +416,8 @@ public class KeycloakTestClient implements DevServicesContext.ContextAware {
 
     private String getPropertyValue(String prop, String defaultValue) {
         // Test resources start in their own threads, which may not have a configuration registered
-        return Config.getOrCreate().getOptionalValue(prop, String.class)
+        // the client secret is a secret key, which can only be read unlocked
+        return SecretKeys.doUnlocked(() -> Config.getOrCreate().getOptionalValue(prop, String.class))
                 .orElseGet(() -> getDevProperty(prop, defaultValue));
     }
 

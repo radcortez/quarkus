@@ -23,6 +23,7 @@ import io.quarkus.oidc.runtime.TenantConfigBean;
 import io.quarkus.proxy.ProxyConfiguration;
 import io.quarkus.proxy.ProxyConfigurationRegistry;
 import io.quarkus.runtime.configuration.ConfigurationException;
+import io.smallrye.config.Secret;
 
 public final class KeycloakPolicyEnforcerUtil {
 
@@ -116,7 +117,7 @@ public final class KeycloakPolicyEnforcerUtil {
 
     private static Map<String, Object> getCredentials(OidcTenantConfig oidcConfig) {
         Map<String, Object> credentials = new HashMap<>();
-        Optional<String> clientSecret = oidcConfig.credentials().secret();
+        Optional<String> clientSecret = oidcConfig.credentials().secret().map(Secret::get);
 
         if (clientSecret.isPresent()) {
             credentials.put("secret", clientSecret.orElse(null));

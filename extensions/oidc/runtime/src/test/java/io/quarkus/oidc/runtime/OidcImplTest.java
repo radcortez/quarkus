@@ -27,7 +27,7 @@ public class OidcImplTest {
         assertEquals("auth-server-url-1", defaultTenantConfig.authServerUrl().get());
         assertEquals(OidcTenantConfig.ApplicationType.WEB_APP, defaultTenantConfig.applicationType().get());
         assertEquals("client5", defaultTenantConfig.clientId().get());
-        assertEquals("secret2", defaultTenantConfig.credentials().secret().get());
+        assertEquals("secret2", defaultTenantConfig.credentials().secret().get().get());
     }
 
     private static OidcConfig getEmptyConfig() {

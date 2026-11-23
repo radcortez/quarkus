@@ -17,6 +17,7 @@ import io.quarkus.tls.runtime.config.KeyStoreConfig;
 import io.quarkus.tls.runtime.config.OtherKeyStoreConfig;
 import io.quarkus.tls.runtime.config.OtherTrustStoreConfig;
 import io.quarkus.tls.runtime.config.TrustStoreConfig;
+import io.smallrye.config.Secret;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.KeyStoreOptions;
 
@@ -39,7 +40,8 @@ public class OtherKeyStores {
 
         try {
             byte[] data = read(config.path().get());
-            String password = CredentialProviders.getKeyStorePassword(config.password(), ksc.credentialsProvider())
+            String password = CredentialProviders
+                    .getKeyStorePassword(config.password().map(Secret::get), ksc.credentialsProvider())
                     .orElse(null);
             if (password == null) {
                 throw new IllegalStateException("Invalid key store configuration for certificate '" + name
@@ -59,7 +61,8 @@ public class OtherKeyStores {
             if (config.alias().isPresent()) {
                 options.setAlias(config.alias().get());
             }
-            String aliasPassword = CredentialProviders.getAliasPassword(config.aliasPassword(), ksc.credentialsProvider())
+            String aliasPassword = CredentialProviders
+                    .getAliasPassword(config.aliasPassword().map(Secret::get), ksc.credentialsProvider())
                     .orElse(null);
             options.setAliasPassword(aliasPassword);
 
@@ -85,7 +88,8 @@ public class OtherKeyStores {
 
         try {
             byte[] data = read(config.path().get());
-            String password = CredentialProviders.getTrustStorePassword(config.password(), tsc.credentialsProvider())
+            String password = CredentialProviders
+                    .getTrustStorePassword(config.password().map(Secret::get), tsc.credentialsProvider())
                     .orElse(null);
             if (password == null) {
                 throw new IllegalStateException("Invalid trust store configuration for certificate '" + name

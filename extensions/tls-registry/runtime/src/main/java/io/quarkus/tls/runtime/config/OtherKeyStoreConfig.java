@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import io.quarkus.runtime.annotations.ConfigGroup;
 import io.quarkus.tls.OtherKeyStoreConfiguration;
+import io.smallrye.config.Secret;
 
 /**
  * Configuration for a key store with an arbitrary type, used for key store formats not directly supported
@@ -58,7 +59,7 @@ public interface OtherKeyStoreConfig extends OtherKeyStoreConfiguration {
      * Used by the standard fallback to load the store. A factory may also read this value.
      * When not set, the password can be retrieved from the credential provider configured on the parent key store.
      */
-    Optional<String> password();
+    Optional<Secret<String>> password();
 
     /**
      * Alias of the private key and certificate in the key store.
@@ -74,7 +75,7 @@ public interface OtherKeyStoreConfig extends OtherKeyStoreConfiguration {
      * Used by the standard fallback to verify the private key is recoverable.
      * When not set, the password can be retrieved from the credential provider configured on the parent key store.
      */
-    Optional<String> aliasPassword();
+    Optional<Secret<String>> aliasPassword();
 
     /**
      * Arbitrary parameters available to a {@code KeyStoreFactory} CDI bean via {@code config.params()}.

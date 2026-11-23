@@ -1,5 +1,7 @@
 package io.quarkus.oidc.client.registration;
 
+import static io.quarkus.oidc.common.runtime.config.OidcClientCommonConfigBuilder.secretOf;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -7,6 +9,7 @@ import java.util.Optional;
 
 import io.quarkus.oidc.common.runtime.config.OidcCommonConfigBuilder;
 import io.smallrye.config.ConfigInstanceBuilder;
+import io.smallrye.config.Secret;
 
 /**
  * The {@link OidcClientRegistrationConfig} builder. This builder is not thread safe.
@@ -33,7 +36,7 @@ public final class OidcClientRegistrationConfigBuilder extends OidcCommonConfigB
     private Optional<String> id;
     private boolean registrationEnabled;
     private boolean registerEarly;
-    private Optional<String> initialToken;
+    private Optional<Secret<String>> initialToken;
     private OidcClientRegistrationConfig.Metadata metadata;
 
     /**
@@ -92,7 +95,7 @@ public final class OidcClientRegistrationConfigBuilder extends OidcCommonConfigB
      * @return this builder
      */
     public OidcClientRegistrationConfigBuilder initialToken(String initialToken) {
-        this.initialToken = Optional.ofNullable(initialToken);
+        this.initialToken = secretOf(initialToken);
         return this;
     }
 

@@ -60,7 +60,7 @@ public interface OidcClientCommonConfig extends OidcCommonConfig {
          * Must be set unless a secret is set in {@link #clientSecret} or {@link #jwt} client authentication is required.
          * You can use `client-secret.value` instead, but both properties are mutually exclusive.
          */
-        Optional<String> secret();
+        Optional<io.smallrye.config.Secret<String>> secret();
 
         /**
          * The client secret used by the `client_secret_basic` (default), `client_secret_post`, or `client_secret_jwt`
@@ -134,7 +134,7 @@ public interface OidcClientCommonConfig extends OidcCommonConfig {
              * The client secret value. This value is ignored if `credentials.secret` is set.
              * Must be set unless a secret is set in {@link #clientSecret} or {@link #jwt} client authentication is required.
              */
-            Optional<String> value();
+            Optional<io.smallrye.config.Secret<String>> value();
 
             /**
              * The Secret CredentialsProvider.
@@ -196,7 +196,7 @@ public interface OidcClientCommonConfig extends OidcCommonConfig {
              * If provided, indicates that JWT is signed using a secret key.
              * It is mutually exclusive with {@link #key}, {@link #keyFile} and {@link #keyStore} properties.
              */
-            Optional<String> secret();
+            Optional<io.smallrye.config.Secret<String>> secret();
 
             /**
              * If provided, indicates that JWT is signed using a secret key provided by Secret CredentialsProvider.
@@ -209,7 +209,7 @@ public interface OidcClientCommonConfig extends OidcCommonConfig {
              * It is mutually exclusive with {@link #secret}, {@link #keyFile} and {@link #keyStore} properties.
              * You can use the {@link #signatureAlgorithm} property to override the default key algorithm, `RS256`.
              */
-            Optional<String> key();
+            Optional<io.smallrye.config.Secret<String>> key();
 
             /**
              * If provided, indicates that JWT is signed using a private key in PEM or JWK format.
@@ -227,7 +227,7 @@ public interface OidcClientCommonConfig extends OidcCommonConfig {
             /**
              * A parameter to specify the password of the keystore file.
              */
-            Optional<String> keyStorePassword();
+            Optional<io.smallrye.config.Secret<String>> keyStorePassword();
 
             /**
              * The private key id or alias.
@@ -237,7 +237,7 @@ public interface OidcClientCommonConfig extends OidcCommonConfig {
             /**
              * The private key password.
              */
-            Optional<String> keyPassword();
+            Optional<io.smallrye.config.Secret<String>> keyPassword();
 
             /**
              * String representation of a public key in PEM format.

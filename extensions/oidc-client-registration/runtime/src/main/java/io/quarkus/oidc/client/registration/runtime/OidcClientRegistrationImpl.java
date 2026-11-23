@@ -156,8 +156,8 @@ public class OidcClientRegistrationImpl implements OidcClientRegistration {
         HttpRequest<Buffer> request = client.postAbs(registrationUri);
         request.putHeader(HttpHeaders.CONTENT_TYPE.toString(), APPLICATION_JSON);
         request.putHeader(HttpHeaders.ACCEPT.toString(), APPLICATION_JSON);
-        if (oidcConfig.initialToken().orElse(null) != null) {
-            request.putHeader(AUTHORIZATION_HEADER, OidcConstants.BEARER_SCHEME + " " + oidcConfig.initialToken().get());
+        if (oidcConfig.initialToken().isPresent()) {
+            request.putHeader(AUTHORIZATION_HEADER, OidcConstants.BEARER_SCHEME + " " + oidcConfig.initialToken().get().get());
         }
         // Retry up to three times with a one-second delay between the retries if the connection is closed
         Buffer buffer = Buffer.buffer(clientRegJson);

@@ -464,6 +464,7 @@ import io.quarkus.tls.KeyStoreAndKeyCertOptions;
 import io.quarkus.tls.KeyStoreFactory;
 import io.quarkus.tls.OtherKeyStoreConfiguration;
 import io.smallrye.common.annotation.Identifier;
+import io.smallrye.config.Secret;
 import io.vertx.core.Vertx;
 import io.vertx.core.net.KeyStoreOptions;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -480,13 +481,14 @@ public class Pkcs11KeyStoreFactory implements KeyStoreFactory {
             Security.addProvider(provider);
 
             KeyStore ks = KeyStore.getInstance("PKCS11", provider);
-            char[] pin = config.password().map(String::toCharArray).orElse(null);
+            String password = config.password().map(Secret::get).orElse(null);
+            char[] pin = password != null ? password.toCharArray() : null;
             ks.load(null, pin); // <3>
 
             KeyStoreOptions options = new KeyStoreOptions() // <4>
                     .setType("PKCS11")
                     .setProvider(provider.getName())
-                    .setPassword(config.password().orElse(null));
+                    .setPassword(password);
 
             return new KeyStoreAndKeyCertOptions(ks, options);
         } catch (Exception e) {

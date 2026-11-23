@@ -44,6 +44,7 @@ import io.quarkus.oidc.runtime.builders.AuthenticationConfigBuilder;
 import io.quarkus.oidc.runtime.builders.LogoutConfigBuilder;
 import io.quarkus.oidc.runtime.builders.LogoutConfigBuilder.BackchannelBuilder;
 import io.quarkus.oidc.runtime.builders.TokenConfigBuilder;
+import io.smallrye.config.Secret;
 import io.smallrye.config.SmallRyeConfigBuilder;
 
 public class OidcTenantConfigBuilderTest {
@@ -450,7 +451,7 @@ public class OidcTenantConfigBuilderTest {
         var introspectionCredentials = config.introspectionCredentials();
         assertNotNull(introspectionCredentials);
         assertEquals("i-name", introspectionCredentials.name().get());
-        assertEquals("i-secret", introspectionCredentials.secret().get());
+        assertEquals("i-secret", introspectionCredentials.secret().get().get());
         assertFalse(introspectionCredentials.includeClientId());
 
         var roles = config.roles();
@@ -518,7 +519,7 @@ public class OidcTenantConfigBuilderTest {
         assertNotNull(certificateChain);
         assertTrue(certificateChain.trustStoreFile().toString().contains("here"));
         assertEquals("trust-store-cert-alias-test-30", certificateChain.trustStoreCertAlias().orElse(null));
-        assertEquals("trust-store-password-test-64", certificateChain.trustStorePassword().orElse(null));
+        assertEquals("trust-store-password-test-64", certificateChain.trustStorePassword().map(Secret::get).orElse(null));
         assertEquals("trust-store-file-type-test-636", certificateChain.trustStoreFileType().orElse(null));
         assertEquals("leaf-certificate-name-test-875", certificateChain.leafCertificateName().orElse(null));
 
@@ -565,7 +566,7 @@ public class OidcTenantConfigBuilderTest {
         assertFalse(authentication.idTokenRequired().orElseThrow());
         assertEquals(357, authentication.internalIdTokenLifespan().orElseThrow().toMinutes());
         assertTrue(authentication.pkceRequired().orElseThrow());
-        assertEquals("state-secret-auth-whatever", authentication.stateSecret().orElse(null));
+        assertEquals("state-secret-auth-whatever", authentication.stateSecret().map(Secret::get).orElse(null));
         var par = authentication.par();
         assertTrue(par.enabled().orElse(false));
         assertEquals("/as/par", par.path().orElse(null));
@@ -594,7 +595,7 @@ public class OidcTenantConfigBuilderTest {
         assertEquals(Strategy.ID_REFRESH_TOKENS, tokenStateManager.strategy());
         assertTrue(tokenStateManager.splitTokens());
         assertFalse(tokenStateManager.encryptionRequired());
-        assertEquals("encryption-secret-test-999", tokenStateManager.encryptionSecret().orElse(null));
+        assertEquals("encryption-secret-test-999", tokenStateManager.encryptionSecret().map(Secret::get).orElse(null));
         assertEquals(EncryptionAlgorithm.DIR, tokenStateManager.encryptionAlgorithm());
 
         var jwks = config.jwks();
@@ -616,11 +617,11 @@ public class OidcTenantConfigBuilderTest {
         assertEquals("client-name-yep", config.clientName().orElse(null));
         var credentials = config.credentials();
         assertNotNull(credentials);
-        assertEquals("secret-yep", credentials.secret().orElse(null));
+        assertEquals("secret-yep", credentials.secret().map(Secret::get).orElse(null));
         var clientSecret = credentials.clientSecret();
         assertNotNull(clientSecret);
         assertEquals(Method.QUERY, clientSecret.method().orElse(null));
-        assertEquals("value-yep", clientSecret.value().orElse(null));
+        assertEquals("value-yep", clientSecret.value().map(Secret::get).orElse(null));
         var provider = clientSecret.provider();
         assertNotNull(provider);
         assertEquals("key-yep", provider.key().orElse(null));
@@ -629,18 +630,18 @@ public class OidcTenantConfigBuilderTest {
         var jwt = credentials.jwt();
         assertNotNull(jwt);
         assertEquals(Source.BEARER, jwt.source());
-        assertEquals("jwt-secret-yep", jwt.secret().orElse(null));
+        assertEquals("jwt-secret-yep", jwt.secret().map(Secret::get).orElse(null));
         provider = jwt.secretProvider();
         assertNotNull(provider);
         assertEquals("jwt-keyring-name-yep", provider.keyringName().orElse(null));
         assertEquals("jwt-name-yep", provider.name().orElse(null));
         assertEquals("jwt-key-yep", provider.key().orElse(null));
-        assertEquals("jwt-key-yep", jwt.key().orElse(null));
+        assertEquals("jwt-key-yep", jwt.key().map(Secret::get).orElse(null));
         assertEquals("jwt-key-file-yep", jwt.keyFile().orElse(null));
         assertEquals("jwt-key-store-file-yep", jwt.keyStoreFile().orElse(null));
-        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().orElse(null));
+        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().map(Secret::get).orElse(null));
         assertEquals("jwt-key-id-yep", jwt.keyId().orElse(null));
-        assertEquals("jwt-key-pwd-yep", jwt.keyPassword().orElse(null));
+        assertEquals("jwt-key-pwd-yep", jwt.keyPassword().map(Secret::get).orElse(null));
         assertEquals("jwt-audience-yep", jwt.audience().orElse(null));
         assertEquals("jwt-token-key-id-yep", jwt.tokenKeyId().orElse(null));
         assertEquals("jwt-issuer", jwt.issuer().orElse(null));
@@ -875,7 +876,8 @@ public class OidcTenantConfigBuilderTest {
         assertFalse(copy.clientIdMetadata().forceHttpsScheme());
         assertEquals("/redirect-path-test", copy.authentication().redirectPath().orElse(null));
         assertEquals("code-grant-header-value", copy.codeGrant().headers().get("code-grant-header-test"));
-        assertEquals("token-state-manager-secret-test", copy.tokenStateManager().encryptionSecret().orElse(null));
+        assertEquals("token-state-manager-secret-test",
+                copy.tokenStateManager().encryptionSecret().map(Secret::get).orElse(null));
         assertEquals(55, copy.jwks().cacheSize());
 
         var newConfig = OidcTenantConfig.builder(existingConfig)
@@ -963,11 +965,11 @@ public class OidcTenantConfigBuilderTest {
         assertEquals("client-name-yep", existingConfig.clientName().orElse(null));
         var credentials = existingConfig.credentials();
         assertNotNull(credentials);
-        assertEquals("secret-yep", credentials.secret().orElse(null));
+        assertEquals("secret-yep", credentials.secret().map(Secret::get).orElse(null));
         var clientSecret = credentials.clientSecret();
         assertNotNull(clientSecret);
         assertEquals(Method.QUERY, clientSecret.method().orElse(null));
-        assertEquals("value-yep", clientSecret.value().orElse(null));
+        assertEquals("value-yep", clientSecret.value().map(Secret::get).orElse(null));
         var provider = clientSecret.provider();
         assertNotNull(provider);
         assertEquals("key-yep", provider.key().orElse(null));
@@ -976,18 +978,18 @@ public class OidcTenantConfigBuilderTest {
         var jwt = credentials.jwt();
         assertNotNull(jwt);
         assertEquals(Source.BEARER, jwt.source());
-        assertEquals("jwt-secret-yep", jwt.secret().orElse(null));
+        assertEquals("jwt-secret-yep", jwt.secret().map(Secret::get).orElse(null));
         provider = jwt.secretProvider();
         assertNotNull(provider);
         assertEquals("jwt-keyring-name-yep", provider.keyringName().orElse(null));
         assertEquals("jwt-name-yep", provider.name().orElse(null));
         assertEquals("jwt-key-yep", provider.key().orElse(null));
-        assertEquals("jwt-key-yep", jwt.key().orElse(null));
+        assertEquals("jwt-key-yep", jwt.key().map(Secret::get).orElse(null));
         assertEquals("jwt-key-file-yep", jwt.keyFile().orElse(null));
         assertEquals("jwt-key-store-file-yep", jwt.keyStoreFile().orElse(null));
-        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().orElse(null));
+        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().map(Secret::get).orElse(null));
         assertEquals("jwt-key-id-yep", jwt.keyId().orElse(null));
-        assertEquals("jwt-key-pwd-yep", jwt.keyPassword().orElse(null));
+        assertEquals("jwt-key-pwd-yep", jwt.keyPassword().map(Secret::get).orElse(null));
         assertEquals("jwt-audience-yep", jwt.audience().orElse(null));
         assertEquals("jwt-token-key-id-yep", jwt.tokenKeyId().orElse(null));
         assertEquals("jwt-issuer", jwt.issuer().orElse(null));
@@ -1010,7 +1012,7 @@ public class OidcTenantConfigBuilderTest {
         assertEquals("client-id-yep", copy.clientId().orElse(null));
         assertEquals("client-name-yep", copy.clientName().orElse(null));
         assertEquals(credentials, copy.credentials());
-        assertEquals("secret-yep", copy.credentials().secret().orElse(null));
+        assertEquals("secret-yep", copy.credentials().secret().map(Secret::get).orElse(null));
 
         var newConfig = OidcTenantConfig.builder(existingConfig)
                 // OidcClientCommonConfig methods
@@ -1044,11 +1046,11 @@ public class OidcTenantConfigBuilderTest {
         assertEquals("client-name-yep", newConfig.clientName().orElse(null));
         credentials = newConfig.credentials();
         assertNotNull(credentials);
-        assertEquals("secret-yep-CHANGED", credentials.secret().orElse(null));
+        assertEquals("secret-yep-CHANGED", credentials.secret().map(Secret::get).orElse(null));
         clientSecret = credentials.clientSecret();
         assertNotNull(clientSecret);
         assertEquals(Method.POST_JWT, clientSecret.method().orElse(null));
-        assertEquals("val-1", clientSecret.value().orElse(null));
+        assertEquals("val-1", clientSecret.value().map(Secret::get).orElse(null));
         provider = clientSecret.provider();
         assertNotNull(provider);
         assertEquals("key-yep", provider.key().orElse(null));
@@ -1057,18 +1059,18 @@ public class OidcTenantConfigBuilderTest {
         jwt = credentials.jwt();
         assertNotNull(jwt);
         assertEquals(Source.BEARER, jwt.source());
-        assertEquals("different-secret", jwt.secret().orElse(null));
+        assertEquals("different-secret", jwt.secret().map(Secret::get).orElse(null));
         provider = jwt.secretProvider();
         assertNotNull(provider);
         assertEquals("jwt-keyring-name-yep", provider.keyringName().orElse(null));
         assertEquals("jwt-name-yep", provider.name().orElse(null));
         assertEquals("jwt-key-yep-CHANGED", provider.key().orElse(null));
-        assertEquals("jwt-key-yep-CHANGED-2", jwt.key().orElse(null));
+        assertEquals("jwt-key-yep-CHANGED-2", jwt.key().map(Secret::get).orElse(null));
         assertEquals("jwt-key-file-yep", jwt.keyFile().orElse(null));
         assertEquals("jwt-key-store-file-yep-CHANGED", jwt.keyStoreFile().orElse(null));
-        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().orElse(null));
+        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().map(Secret::get).orElse(null));
         assertEquals("jwt-key-id-yep", jwt.keyId().orElse(null));
-        assertEquals("jwt-key-pwd-yep-CHANGED", jwt.keyPassword().orElse(null));
+        assertEquals("jwt-key-pwd-yep-CHANGED", jwt.keyPassword().map(Secret::get).orElse(null));
         assertEquals("jwt-audience-yep", jwt.audience().orElse(null));
         assertEquals("jwt-token-key-id-yep", jwt.tokenKeyId().orElse(null));
         assertEquals("jwt-issuer-CHANGED", jwt.issuer().orElse(null));
@@ -1177,9 +1179,9 @@ public class OidcTenantConfigBuilderTest {
         var buildCredentials = config.credentials();
         assertEquals("1", config.tenantId().orElse(null));
         assertNotNull(buildCredentials);
-        assertEquals("1234", buildCredentials.secret().orElse(null));
-        assertEquals("hush-hush", buildCredentials.jwt().secret().orElse(null));
-        assertEquals("harry", buildCredentials.clientSecret().value().orElse(null));
+        assertEquals("1234", buildCredentials.secret().map(Secret::get).orElse(null));
+        assertEquals("hush-hush", buildCredentials.jwt().secret().map(Secret::get).orElse(null));
+        assertEquals("harry", buildCredentials.clientSecret().value().map(Secret::get).orElse(null));
     }
 
     @Test
@@ -1194,13 +1196,13 @@ public class OidcTenantConfigBuilderTest {
         var config2 = config2Builder.build();
         assertFalse(config2.introspectionCredentials().includeClientId());
         assertEquals("name1", config2.introspectionCredentials().name().orElse(null));
-        assertEquals("secret1", config2.introspectionCredentials().secret().orElse(null));
+        assertEquals("secret1", config2.introspectionCredentials().secret().map(Secret::get).orElse(null));
 
         var config3Builder = new IntrospectionCredentialsBuilder(config2Builder).secret("951357").end();
         var config3 = config3Builder.build();
         assertFalse(config3.introspectionCredentials().includeClientId());
         assertEquals("name1", config3.introspectionCredentials().name().orElse(null));
-        assertEquals("951357", config3.introspectionCredentials().secret().orElse(null));
+        assertEquals("951357", config3.introspectionCredentials().secret().map(Secret::get).orElse(null));
 
         assertEquals("1", config3.tenantId().orElse(null));
     }
@@ -1362,7 +1364,7 @@ public class OidcTenantConfigBuilderTest {
         assertEquals("try", builtFirst.trustStoreFileType().orElse(null));
         assertTrue(builtFirst.trustStoreFile().toString().contains("march"));
         assertEquals("to", builtFirst.trustStoreCertAlias().orElse(null));
-        assertEquals("Isengard", builtFirst.trustStorePassword().orElse(null));
+        assertEquals("Isengard", builtFirst.trustStorePassword().map(Secret::get).orElse(null));
 
         var secondBuilder = new CertificateChainBuilder(new OidcTenantConfigBuilder(config1))
                 .leafCertificateName("fangorn").end();
@@ -1373,7 +1375,7 @@ public class OidcTenantConfigBuilderTest {
         assertEquals("try", builtSecond.trustStoreFileType().orElse(null));
         assertTrue(builtSecond.trustStoreFile().toString().contains("march"));
         assertEquals("to", builtSecond.trustStoreCertAlias().orElse(null));
-        assertEquals("Isengard", builtSecond.trustStorePassword().orElse(null));
+        assertEquals("Isengard", builtSecond.trustStorePassword().map(Secret::get).orElse(null));
 
         var config3 = OidcTenantConfig.builder(config2).certificateChain().trustStorePassword("home").end().build();
         var builtThird = config3.certificateChain();
@@ -1382,7 +1384,7 @@ public class OidcTenantConfigBuilderTest {
         assertEquals("try", builtThird.trustStoreFileType().orElse(null));
         assertTrue(builtThird.trustStoreFile().toString().contains("march"));
         assertEquals("to", builtThird.trustStoreCertAlias().orElse(null));
-        assertEquals("home", builtThird.trustStorePassword().orElse(null));
+        assertEquals("home", builtThird.trustStorePassword().map(Secret::get).orElse(null));
 
         assertEquals("2", config3.tenantId().orElse(null));
     }
@@ -1469,7 +1471,7 @@ public class OidcTenantConfigBuilderTest {
         assertFalse(builtFirst.idTokenRequired().orElseThrow());
         assertEquals(357, builtFirst.internalIdTokenLifespan().orElseThrow().toMinutes());
         assertTrue(builtFirst.pkceRequired().orElseThrow());
-        assertEquals("state-secret-auth-whatever", builtFirst.stateSecret().orElse(null));
+        assertEquals("state-secret-auth-whatever", builtFirst.stateSecret().map(Secret::get).orElse(null));
         assertTrue(builtFirst.par().enabled().orElse(false));
         assertTrue(builtFirst.par().path().isEmpty());
 
@@ -1521,7 +1523,7 @@ public class OidcTenantConfigBuilderTest {
         assertFalse(builtSecond.idTokenRequired().orElseThrow());
         assertEquals(357, builtSecond.internalIdTokenLifespan().orElseThrow().toMinutes());
         assertTrue(builtSecond.pkceRequired().orElseThrow());
-        assertEquals("my-state-secret", builtSecond.stateSecret().orElse(null));
+        assertEquals("my-state-secret", builtSecond.stateSecret().map(Secret::get).orElse(null));
         assertTrue(builtSecond.par().enabled().orElse(false));
         assertTrue(builtSecond.par().path().isEmpty());
     }
@@ -1591,7 +1593,7 @@ public class OidcTenantConfigBuilderTest {
         assertEquals(Strategy.ID_REFRESH_TOKENS, builtFirst.strategy());
         assertTrue(builtFirst.splitTokens());
         assertFalse(builtFirst.encryptionRequired());
-        assertEquals("1-enc-secret", builtFirst.encryptionSecret().orElse(null));
+        assertEquals("1-enc-secret", builtFirst.encryptionSecret().map(Secret::get).orElse(null));
         assertEquals(EncryptionAlgorithm.DIR, builtFirst.encryptionAlgorithm());
 
         var second = new TokenStateManagerBuilder(new OidcTenantConfigBuilder(config1))
@@ -1602,7 +1604,7 @@ public class OidcTenantConfigBuilderTest {
         assertEquals(Strategy.ID_REFRESH_TOKENS, builtSecond.strategy());
         assertFalse(builtSecond.splitTokens());
         assertTrue(builtSecond.encryptionRequired());
-        assertEquals("1-enc-secret", builtSecond.encryptionSecret().orElse(null));
+        assertEquals("1-enc-secret", builtSecond.encryptionSecret().map(Secret::get).orElse(null));
         assertEquals(EncryptionAlgorithm.DIR, builtSecond.encryptionAlgorithm());
 
         assertEquals("6", config2.tenantId().orElse(null));

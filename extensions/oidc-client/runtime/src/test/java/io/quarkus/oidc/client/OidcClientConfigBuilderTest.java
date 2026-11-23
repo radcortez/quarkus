@@ -20,6 +20,7 @@ import io.quarkus.oidc.common.runtime.config.OidcClientCommonConfig.Credentials.
 import io.quarkus.oidc.common.runtime.config.OidcClientCommonConfigBuilder.CredentialsBuilder;
 import io.quarkus.oidc.common.runtime.config.OidcClientCommonConfigBuilder.JwtBuilder;
 import io.quarkus.oidc.common.runtime.config.OidcClientCommonConfigBuilder.SecretBuilder;
+import io.smallrye.config.Secret;
 
 public class OidcClientConfigBuilderTest {
 
@@ -233,11 +234,11 @@ public class OidcClientConfigBuilderTest {
         assertEquals("client-name-yep", config.clientName().orElse(null));
         var credentials = config.credentials();
         assertNotNull(credentials);
-        assertEquals("secret-yep", credentials.secret().orElse(null));
+        assertEquals("secret-yep", credentials.secret().map(Secret::get).orElse(null));
         var clientSecret = credentials.clientSecret();
         assertNotNull(clientSecret);
         assertEquals(Method.QUERY, clientSecret.method().orElse(null));
-        assertEquals("value-yep", clientSecret.value().orElse(null));
+        assertEquals("value-yep", clientSecret.value().map(Secret::get).orElse(null));
         var provider = clientSecret.provider();
         assertNotNull(provider);
         assertEquals("key-yep", provider.key().orElse(null));
@@ -246,19 +247,19 @@ public class OidcClientConfigBuilderTest {
         var jwt = credentials.jwt();
         assertNotNull(jwt);
         assertEquals(Source.BEARER, jwt.source());
-        assertEquals("jwt-secret-yep", jwt.secret().orElse(null));
+        assertEquals("jwt-secret-yep", jwt.secret().map(Secret::get).orElse(null));
         assertEquals("janitor", jwt.tokenPath().map(Path::toString).orElse(null));
         provider = jwt.secretProvider();
         assertNotNull(provider);
         assertEquals("jwt-keyring-name-yep", provider.keyringName().orElse(null));
         assertEquals("jwt-name-yep", provider.name().orElse(null));
         assertEquals("jwt-key-yep", provider.key().orElse(null));
-        assertEquals("jwt-key-yep", jwt.key().orElse(null));
+        assertEquals("jwt-key-yep", jwt.key().map(Secret::get).orElse(null));
         assertEquals("jwt-key-file-yep", jwt.keyFile().orElse(null));
         assertEquals("jwt-key-store-file-yep", jwt.keyStoreFile().orElse(null));
-        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().orElse(null));
+        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().map(Secret::get).orElse(null));
         assertEquals("jwt-key-id-yep", jwt.keyId().orElse(null));
-        assertEquals("jwt-key-pwd-yep", jwt.keyPassword().orElse(null));
+        assertEquals("jwt-key-pwd-yep", jwt.keyPassword().map(Secret::get).orElse(null));
         assertEquals("jwt-audience-yep", jwt.audience().orElse(null));
         assertEquals("jwt-token-key-id-yep", jwt.tokenKeyId().orElse(null));
         assertEquals("jwt-issuer", jwt.issuer().orElse(null));
@@ -465,11 +466,11 @@ public class OidcClientConfigBuilderTest {
         assertEquals("client-name-yep", existingConfig.clientName().orElse(null));
         var credentials = existingConfig.credentials();
         assertNotNull(credentials);
-        assertEquals("secret-yep", credentials.secret().orElse(null));
+        assertEquals("secret-yep", credentials.secret().map(Secret::get).orElse(null));
         var clientSecret = credentials.clientSecret();
         assertNotNull(clientSecret);
         assertEquals(Method.QUERY, clientSecret.method().orElse(null));
-        assertEquals("value-yep", clientSecret.value().orElse(null));
+        assertEquals("value-yep", clientSecret.value().map(Secret::get).orElse(null));
         var provider = clientSecret.provider();
         assertNotNull(provider);
         assertEquals("key-yep", provider.key().orElse(null));
@@ -478,19 +479,19 @@ public class OidcClientConfigBuilderTest {
         var jwt = credentials.jwt();
         assertNotNull(jwt);
         assertEquals(Source.BEARER, jwt.source());
-        assertEquals("jwt-secret-yep", jwt.secret().orElse(null));
+        assertEquals("jwt-secret-yep", jwt.secret().map(Secret::get).orElse(null));
         assertEquals("robot", jwt.tokenPath().map(Path::toString).orElse(null));
         provider = jwt.secretProvider();
         assertNotNull(provider);
         assertEquals("jwt-keyring-name-yep", provider.keyringName().orElse(null));
         assertEquals("jwt-name-yep", provider.name().orElse(null));
         assertEquals("jwt-key-yep", provider.key().orElse(null));
-        assertEquals("jwt-key-yep", jwt.key().orElse(null));
+        assertEquals("jwt-key-yep", jwt.key().map(Secret::get).orElse(null));
         assertEquals("jwt-key-file-yep", jwt.keyFile().orElse(null));
         assertEquals("jwt-key-store-file-yep", jwt.keyStoreFile().orElse(null));
-        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().orElse(null));
+        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().map(Secret::get).orElse(null));
         assertEquals("jwt-key-id-yep", jwt.keyId().orElse(null));
-        assertEquals("jwt-key-pwd-yep", jwt.keyPassword().orElse(null));
+        assertEquals("jwt-key-pwd-yep", jwt.keyPassword().map(Secret::get).orElse(null));
         assertEquals("jwt-audience-yep", jwt.audience().orElse(null));
         assertEquals("jwt-token-key-id-yep", jwt.tokenKeyId().orElse(null));
         assertEquals("jwt-issuer", jwt.issuer().orElse(null));
@@ -538,11 +539,11 @@ public class OidcClientConfigBuilderTest {
         assertEquals("client-name-yep", newConfig.clientName().orElse(null));
         credentials = newConfig.credentials();
         assertNotNull(credentials);
-        assertEquals("secret-yep-CHANGED", credentials.secret().orElse(null));
+        assertEquals("secret-yep-CHANGED", credentials.secret().map(Secret::get).orElse(null));
         clientSecret = credentials.clientSecret();
         assertNotNull(clientSecret);
         assertEquals(Method.POST_JWT, clientSecret.method().orElse(null));
-        assertEquals("val-1", clientSecret.value().orElse(null));
+        assertEquals("val-1", clientSecret.value().map(Secret::get).orElse(null));
         provider = clientSecret.provider();
         assertNotNull(provider);
         assertEquals("key-yep", provider.key().orElse(null));
@@ -551,18 +552,18 @@ public class OidcClientConfigBuilderTest {
         jwt = credentials.jwt();
         assertNotNull(jwt);
         assertEquals(Source.BEARER, jwt.source());
-        assertEquals("different-secret", jwt.secret().orElse(null));
+        assertEquals("different-secret", jwt.secret().map(Secret::get).orElse(null));
         provider = jwt.secretProvider();
         assertNotNull(provider);
         assertEquals("jwt-keyring-name-yep", provider.keyringName().orElse(null));
         assertEquals("jwt-name-yep", provider.name().orElse(null));
         assertEquals("jwt-key-yep-CHANGED", provider.key().orElse(null));
-        assertEquals("jwt-key-yep-CHANGED-2", jwt.key().orElse(null));
+        assertEquals("jwt-key-yep-CHANGED-2", jwt.key().map(Secret::get).orElse(null));
         assertEquals("jwt-key-file-yep", jwt.keyFile().orElse(null));
         assertEquals("jwt-key-store-file-yep-CHANGED", jwt.keyStoreFile().orElse(null));
-        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().orElse(null));
+        assertEquals("jwt-key-store-password-yep", jwt.keyStorePassword().map(Secret::get).orElse(null));
         assertEquals("jwt-key-id-yep", jwt.keyId().orElse(null));
-        assertEquals("jwt-key-pwd-yep-CHANGED", jwt.keyPassword().orElse(null));
+        assertEquals("jwt-key-pwd-yep-CHANGED", jwt.keyPassword().map(Secret::get).orElse(null));
         assertEquals("jwt-audience-yep", jwt.audience().orElse(null));
         assertEquals("jwt-token-key-id-yep", jwt.tokenKeyId().orElse(null));
         assertEquals("jwt-issuer-CHANGED", jwt.issuer().orElse(null));
@@ -652,9 +653,9 @@ public class OidcClientConfigBuilderTest {
         var buildCredentials = config.credentials();
         assertEquals("1", config.id().orElse(null));
         assertNotNull(buildCredentials);
-        assertEquals("1234", buildCredentials.secret().orElse(null));
-        assertEquals("hush-hush", buildCredentials.jwt().secret().orElse(null));
-        assertEquals("harry", buildCredentials.clientSecret().value().orElse(null));
+        assertEquals("1234", buildCredentials.secret().map(Secret::get).orElse(null));
+        assertEquals("hush-hush", buildCredentials.jwt().secret().map(Secret::get).orElse(null));
+        assertEquals("harry", buildCredentials.clientSecret().value().map(Secret::get).orElse(null));
     }
 
     @Test

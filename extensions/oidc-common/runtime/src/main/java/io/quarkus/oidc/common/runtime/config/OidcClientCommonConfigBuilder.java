@@ -187,7 +187,7 @@ public abstract class OidcClientCommonConfigBuilder<T> extends OidcCommonConfigB
     public static final class CredentialsBuilder<T> {
 
         private final OidcClientCommonConfigBuilder<T> builder;
-        private Optional<String> secret;
+        private Optional<io.smallrye.config.Secret<String>> secret;
         private Secret clientSecret;
         private Jwt jwt;
         private boolean forAllEndpoints;
@@ -211,7 +211,7 @@ public abstract class OidcClientCommonConfigBuilder<T> extends OidcCommonConfigB
          * @return this builder
          */
         public CredentialsBuilder<T> secret(String secret) {
-            this.secret = Optional.ofNullable(secret);
+            this.secret = secretOf(secret);
             return this;
         }
 
@@ -348,7 +348,7 @@ public abstract class OidcClientCommonConfigBuilder<T> extends OidcCommonConfigB
 
         private final CredentialsBuilder<T> builder;
 
-        private Optional<String> value;
+        private Optional<io.smallrye.config.Secret<String>> value;
         private Optional<Method> method;
         private Provider provider;
 
@@ -380,7 +380,7 @@ public abstract class OidcClientCommonConfigBuilder<T> extends OidcCommonConfigB
          * @return this builder
          */
         public SecretBuilder<T> value(String value) {
-            this.value = Optional.ofNullable(value);
+            this.value = secretOf(value);
             return this;
         }
 
@@ -544,14 +544,14 @@ public abstract class OidcClientCommonConfigBuilder<T> extends OidcCommonConfigB
         private final CredentialsBuilder<T> builder;
         private final Map<String, String> claims = new HashMap<>();
         private Source source;
-        private Optional<String> secret;
+        private Optional<io.smallrye.config.Secret<String>> secret;
         private Provider secretProvider;
-        private Optional<String> key;
+        private Optional<io.smallrye.config.Secret<String>> key;
         private Optional<String> keyFile;
         private Optional<String> keyStoreFile;
-        private Optional<String> keyStorePassword;
+        private Optional<io.smallrye.config.Secret<String>> keyStorePassword;
         private Optional<String> keyId;
-        private Optional<String> keyPassword;
+        private Optional<io.smallrye.config.Secret<String>> keyPassword;
         private Optional<String> publicKey;
         private Optional<String> publicKeyFile;
         private Optional<String> audience;
@@ -658,7 +658,7 @@ public abstract class OidcClientCommonConfigBuilder<T> extends OidcCommonConfigB
          * @return this builder
          */
         public JwtBuilder<T> secret(String secret) {
-            this.secret = Optional.ofNullable(secret);
+            this.secret = secretOf(secret);
             return this;
         }
 
@@ -667,7 +667,7 @@ public abstract class OidcClientCommonConfigBuilder<T> extends OidcCommonConfigB
          * @return this builder
          */
         public JwtBuilder<T> key(String key) {
-            this.key = Optional.ofNullable(key);
+            this.key = secretOf(key);
             return this;
         }
 
@@ -712,7 +712,7 @@ public abstract class OidcClientCommonConfigBuilder<T> extends OidcCommonConfigB
          * @return this builder
          */
         public JwtBuilder<T> keyStorePassword(String keyStorePassword) {
-            this.keyStorePassword = Optional.ofNullable(keyStorePassword);
+            this.keyStorePassword = secretOf(keyStorePassword);
             return this;
         }
 
@@ -730,7 +730,7 @@ public abstract class OidcClientCommonConfigBuilder<T> extends OidcCommonConfigB
          * @return this builder
          */
         public JwtBuilder<T> keyPassword(String keyPassword) {
-            this.keyPassword = Optional.ofNullable(keyPassword);
+            this.keyPassword = secretOf(keyPassword);
             return this;
         }
 
@@ -940,5 +940,9 @@ public abstract class OidcClientCommonConfigBuilder<T> extends OidcCommonConfigB
                     .with(Attestation::signatureAlgorithm, signatureAlgorithm)
                     .build();
         }
+    }
+
+    public static Optional<io.smallrye.config.Secret<String>> secretOf(String value) {
+        return Optional.ofNullable(value).map(v -> () -> v);
     }
 }

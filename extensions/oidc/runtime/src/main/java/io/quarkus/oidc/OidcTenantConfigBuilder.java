@@ -1,5 +1,7 @@
 package io.quarkus.oidc;
 
+import static io.quarkus.oidc.common.runtime.config.OidcClientCommonConfigBuilder.secretOf;
+
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -37,6 +39,7 @@ import io.quarkus.oidc.runtime.builders.LogoutConfigBuilder;
 import io.quarkus.oidc.runtime.builders.TokenConfigBuilder;
 import io.quarkus.oidc.runtime.providers.KnownOidcProviders;
 import io.smallrye.config.ConfigInstanceBuilder;
+import io.smallrye.config.Secret;
 
 /**
  * Builder for the {@link io.quarkus.oidc.OidcTenantConfig}. This builder is not thread-safe.
@@ -876,7 +879,7 @@ public final class OidcTenantConfigBuilder extends OidcClientCommonConfigBuilder
 
         private final OidcTenantConfigBuilder builder;
         private Optional<String> name;
-        private Optional<String> secret;
+        private Optional<Secret<String>> secret;
         private boolean includeClientId;
 
         public IntrospectionCredentialsBuilder() {
@@ -904,7 +907,7 @@ public final class OidcTenantConfigBuilder extends OidcClientCommonConfigBuilder
          * @return this builder
          */
         public IntrospectionCredentialsBuilder secret(String secret) {
-            this.secret = Optional.ofNullable(secret);
+            this.secret = secretOf(secret);
             return this;
         }
 
@@ -944,7 +947,7 @@ public final class OidcTenantConfigBuilder extends OidcClientCommonConfigBuilder
         private final OidcTenantConfigBuilder builder;
         private Optional<String> leafCertificateName;
         private Optional<Path> trustStoreFile;
-        private Optional<String> trustStorePassword;
+        private Optional<Secret<String>> trustStorePassword;
         private Optional<String> trustStoreCertAlias;
         private Optional<String> trustStoreFileType;
 
@@ -985,7 +988,7 @@ public final class OidcTenantConfigBuilder extends OidcClientCommonConfigBuilder
          * @return this builder
          */
         public CertificateChainBuilder trustStorePassword(String trustStorePassword) {
-            this.trustStorePassword = Optional.ofNullable(trustStorePassword);
+            this.trustStorePassword = secretOf(trustStorePassword);
             return this;
         }
 
@@ -1391,7 +1394,7 @@ public final class OidcTenantConfigBuilder extends OidcClientCommonConfigBuilder
         private Strategy strategy;
         private boolean splitTokens;
         private boolean encryptionRequired;
-        private Optional<String> encryptionSecret;
+        private Optional<Secret<String>> encryptionSecret;
         private EncryptionAlgorithm encryptionAlgorithm;
 
         public TokenStateManagerBuilder() {
@@ -1422,7 +1425,7 @@ public final class OidcTenantConfigBuilder extends OidcClientCommonConfigBuilder
          * @return this builder
          */
         public TokenStateManagerBuilder encryptionSecret(String encryptionSecret) {
-            this.encryptionSecret = Optional.ofNullable(encryptionSecret);
+            this.encryptionSecret = secretOf(encryptionSecret);
             return this;
         }
 

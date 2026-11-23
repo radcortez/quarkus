@@ -34,7 +34,7 @@ public class SessionExpiredOidcRedirectFilter implements OidcRedirectFilter {
         AuthorizationCodeTokens tokens = context.routingContext().get(AuthorizationCodeTokens.class.getName());
         String userName = OidcCommonUtils.decodeJwtContent(tokens.getIdToken()).getString(Claims.preferred_username.name());
         String jwe = Jwt.preferredUserName(userName).jwe()
-                .encryptWithSecret(context.oidcTenantConfig().credentials().secret().get());
+                .encryptWithSecret(context.oidcTenantConfig().credentials().secret().get().get());
         OidcUtils.createCookie(context.routingContext(), context.oidcTenantConfig(), "session_expired",
                 jwe + "|" + context.oidcTenantConfig().tenantId().get(), 10);
 

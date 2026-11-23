@@ -40,6 +40,7 @@ import io.quarkus.deployment.builditem.Startable;
 import io.quarkus.deployment.dev.devservices.DevServicesConfig;
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.Config;
+import io.smallrye.config.SecretKeys;
 import io.smallrye.jwt.build.Jwt;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerOptions;
@@ -176,7 +177,7 @@ class OidcDevServicesProcessor {
     }
 
     private static Optional<String> getOptionalOidcClientSecret() {
-        return Config.get().getOptionalValue(CLIENT_SECRET_CONFIG_KEY, String.class);
+        return SecretKeys.doUnlocked(() -> Config.get().getOptionalValue(CLIENT_SECRET_CONFIG_KEY, String.class));
     }
 
     private static void mainRoute(RoutingContext rc) {

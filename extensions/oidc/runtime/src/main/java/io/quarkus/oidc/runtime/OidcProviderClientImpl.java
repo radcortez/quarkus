@@ -146,7 +146,7 @@ public class OidcProviderClientImpl implements OidcProviderClient, Closeable {
         if (oidcConfig.introspectionCredentials().name().isPresent()
                 && oidcConfig.introspectionCredentials().secret().isPresent()) {
             return OidcCommonUtils.basicSchemeValue(oidcConfig.introspectionCredentials().name().get(),
-                    oidcConfig.introspectionCredentials().secret().get());
+                    oidcConfig.introspectionCredentials().secret().get().get());
         } else {
             return null;
         }

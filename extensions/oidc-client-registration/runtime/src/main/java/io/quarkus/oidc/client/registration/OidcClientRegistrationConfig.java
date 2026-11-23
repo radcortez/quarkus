@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.quarkus.oidc.common.runtime.config.OidcCommonConfig;
+import io.smallrye.config.Secret;
 import io.smallrye.config.WithDefault;
 
 //https://datatracker.ietf.org/doc/html/rfc7592
@@ -31,7 +32,7 @@ public interface OidcClientRegistrationConfig extends OidcCommonConfig {
     /**
      * Initial access token
      */
-    Optional<String> initialToken();
+    Optional<Secret<String>> initialToken();
 
     /**
      * Client metadata

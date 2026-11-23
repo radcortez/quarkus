@@ -32,7 +32,7 @@ public class CertChainPublicKeyResolver implements RefreshableVerificationKeyRes
         }
         this.thumbprints = TrustStoreUtils.getTrustedCertificateThumbprints(
                 oidcConfig.certificateChain().trustStoreFile().get(),
-                oidcConfig.certificateChain().trustStorePassword().get(),
+                oidcConfig.certificateChain().trustStorePassword().get().get(),
                 oidcConfig.certificateChain().trustStoreCertAlias(),
                 oidcConfig.certificateChain().trustStoreFileType());
         this.expectedLeafCertificateName = oidcConfig.certificateChain().leafCertificateName();

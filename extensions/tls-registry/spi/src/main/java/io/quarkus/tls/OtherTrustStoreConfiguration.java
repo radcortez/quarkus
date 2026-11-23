@@ -4,6 +4,8 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 
+import io.smallrye.config.Secret;
+
 /**
  * Configuration contract for a trust store with an arbitrary type.
  * <p>
@@ -32,7 +34,7 @@ public interface OtherTrustStoreConfiguration {
     /**
      * Password of the trust store.
      */
-    Optional<String> password();
+    Optional<Secret<String>> password();
 
     /**
      * Alias of the certificate in the trust store.

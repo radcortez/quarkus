@@ -76,6 +76,7 @@ import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.runtime.configuration.MemorySize;
 import io.smallrye.config.Config;
+import io.smallrye.config.SecretKeys;
 import io.smallrye.mutiny.TimeoutException;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.Vertx;
@@ -962,7 +963,7 @@ public class KeycloakDevServicesProcessor {
 
     private static String getOidcClientSecret(KeycloakDevServicesConfig config) {
         // if the application type is web-app or hybrid, OidcRecorder will enforce that the client id and secret are configured
-        return Config.get().getOptionalValue(CLIENT_SECRET_CONFIG_KEY, String.class)
+        return SecretKeys.doUnlocked(() -> Config.get().getOptionalValue(CLIENT_SECRET_CONFIG_KEY, String.class))
                 .orElse(config.createClient() ? "secret" : "");
     }
 

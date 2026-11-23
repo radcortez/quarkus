@@ -164,7 +164,7 @@ final class TenantConfigContextImpl implements TenantConfigContext {
         if (config.authentication().pkceRequired().orElse(false) || config.authentication().nonceRequired()) {
             String stateSecret = null;
             if (config.authentication().stateSecret().isPresent()) {
-                stateSecret = config.authentication().stateSecret().get();
+                stateSecret = config.authentication().stateSecret().get().get();
             }
 
             if (stateSecret == null) {
@@ -205,7 +205,7 @@ final class TenantConfigContextImpl implements TenantConfigContext {
         if (config.tokenStateManager().encryptionRequired()) {
             String encSecret = null;
             if (config.tokenStateManager().encryptionSecret().isPresent()) {
-                encSecret = config.tokenStateManager().encryptionSecret().get();
+                encSecret = config.tokenStateManager().encryptionSecret().get().get();
             } else {
                 LOG.debug("'quarkus.oidc.token-state-manager.encryption-secret' is not configured");
                 encSecret = clientOrJwtSecret;

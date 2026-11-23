@@ -1,5 +1,7 @@
 package io.quarkus.oidc.runtime.builders;
 
+import static io.quarkus.oidc.common.runtime.config.OidcClientCommonConfigBuilder.secretOf;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,6 +21,7 @@ import io.quarkus.oidc.runtime.OidcTenantConfig.Authentication.ResponseMode;
 import io.quarkus.oidc.runtime.OidcTenantConfig.PushedAuthorizationRequest;
 import io.quarkus.oidc.runtime.OidcTenantConfig.RichAuthorizationRequests;
 import io.smallrye.config.ConfigInstanceBuilder;
+import io.smallrye.config.Secret;
 
 /**
  * Builder for the {@link Authentication} config.
@@ -58,7 +61,7 @@ public final class AuthenticationConfigBuilder {
     private Optional<Boolean> idTokenRequired;
     private Optional<Duration> internalIdTokenLifespan;
     private Optional<Boolean> pkceRequired;
-    private Optional<String> stateSecret;
+    private Optional<Secret<String>> stateSecret;
     private PushedAuthorizationRequest par;
     private Optional<RichAuthorizationRequests> rar;
 
@@ -571,7 +574,7 @@ public final class AuthenticationConfigBuilder {
      * @return this builder
      */
     public AuthenticationConfigBuilder stateSecret(String stateSecret) {
-        this.stateSecret = Optional.ofNullable(stateSecret);
+        this.stateSecret = secretOf(stateSecret);
         return this;
     }
 

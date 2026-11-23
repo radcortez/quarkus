@@ -4,6 +4,7 @@ import java.util.List;
 
 import io.quarkus.oidc.runtime.OidcConfigPropertySupplier;
 import io.smallrye.config.Config;
+import io.smallrye.config.SecretKeys;
 
 public class OidcDevUiRuntimePropertiesDTO {
     private static final String CONFIG_PREFIX = "quarkus.oidc.";
@@ -46,7 +47,8 @@ public class OidcDevUiRuntimePropertiesDTO {
             String graphqlUiPath, String devServiceConfigHashCode, String propertiesStateId,
             String logoutPath, String readSessionCookiePath) {
         this.clientId = new OidcConfigPropertySupplier(CLIENT_ID_CONFIG_KEY).get(config);
-        this.clientSecret = new OidcConfigPropertySupplier(CLIENT_SECRET_CONFIG_KEY, "").get(config);
+        this.clientSecret = SecretKeys
+                .doUnlocked(() -> new OidcConfigPropertySupplier(CLIENT_SECRET_CONFIG_KEY, "").get(config));
         this.authorizationUrl = new OidcConfigPropertySupplier(AUTHORIZATION_PATH_CONFIG_KEY, authorizationUrl, true)
                 .get(config);
         this.tokenUrl = new OidcConfigPropertySupplier(TOKEN_PATH_CONFIG_KEY, tokenUrl, true).get(config);

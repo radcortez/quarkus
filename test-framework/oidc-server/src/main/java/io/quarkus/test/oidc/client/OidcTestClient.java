@@ -10,6 +10,7 @@ import java.util.Map;
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.ArcContainer;
 import io.smallrye.config.Config;
+import io.smallrye.config.SecretKeys;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -163,7 +164,8 @@ public class OidcTestClient {
     }
 
     private String getPropertyValue(String prop) {
-        return Config.get().getValue(prop, String.class);
+        // the client secret is a secret key, which can only be read unlocked
+        return SecretKeys.doUnlocked(() -> Config.get().getValue(prop, String.class));
     }
 
     private String getOptionalPropertyValue(String prop, String defaultProp) {

@@ -20,6 +20,7 @@ import io.quarkus.runtime.annotations.ConfigDocMapKey;
 import io.quarkus.runtime.annotations.ConfigDocSection;
 import io.quarkus.runtime.configuration.TrimmedStringConverter;
 import io.quarkus.security.identity.SecurityIdentityAugmentor;
+import io.smallrye.config.Secret;
 import io.smallrye.config.WithConverter;
 import io.smallrye.config.WithDefault;
 
@@ -125,7 +126,7 @@ public interface OidcTenantConfig extends OidcClientCommonConfig {
         /**
          * Secret
          */
-        Optional<String> secret();
+        Optional<Secret<String>> secret();
 
         /**
          * Include OpenId Connect Client ID configured with `quarkus.oidc.client-id`.
@@ -254,7 +255,7 @@ public interface OidcTenantConfig extends OidcClientCommonConfig {
         /**
          * A parameter to specify the password of the truststore file if it is configured with {@link #trustStoreFile}.
          */
-        Optional<String> trustStorePassword();
+        Optional<Secret<String>> trustStorePassword();
 
         /**
          * A parameter to specify the alias of the truststore certificate.
@@ -592,7 +593,7 @@ public interface OidcTenantConfig extends OidcClientCommonConfig {
          * The length of the secret used to encrypt the tokens should be at least 32 characters long.
          * A warning is logged if the secret length is less than 16 characters.
          */
-        Optional<String> encryptionSecret();
+        Optional<Secret<String>> encryptionSecret();
 
         /**
          * Supported session cookie key encryption algorithms
@@ -1041,7 +1042,7 @@ public interface OidcTenantConfig extends OidcClientCommonConfig {
          * <p/>
          * Error is reported if the secret length is less than 16 characters.
          */
-        Optional<String> stateSecret();
+        Optional<Secret<String>> stateSecret();
 
         /**
          * Configuration for the pushed authorization request (PAR)

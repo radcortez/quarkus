@@ -4,6 +4,8 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 
+import io.smallrye.config.Secret;
+
 /**
  * Configuration contract for a key store with an arbitrary type.
  * <p>
@@ -32,7 +34,7 @@ public interface OtherKeyStoreConfiguration {
     /**
      * Password of the key store.
      */
-    Optional<String> password();
+    Optional<Secret<String>> password();
 
     /**
      * Alias of the private key and certificate in the key store.
@@ -42,7 +44,7 @@ public interface OtherKeyStoreConfiguration {
     /**
      * Password of the alias in the key store.
      */
-    Optional<String> aliasPassword();
+    Optional<Secret<String>> aliasPassword();
 
     /**
      * Arbitrary parameters available to a {@code KeyStoreFactory} CDI bean via {@code config.params()}.

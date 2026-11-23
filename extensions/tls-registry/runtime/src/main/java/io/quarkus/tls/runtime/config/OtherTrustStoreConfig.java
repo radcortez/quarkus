@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import io.quarkus.runtime.annotations.ConfigGroup;
 import io.quarkus.tls.OtherTrustStoreConfiguration;
+import io.smallrye.config.Secret;
 
 /**
  * Configuration for a trust store with an arbitrary type, used for trust store formats not directly supported
@@ -58,7 +59,7 @@ public interface OtherTrustStoreConfig extends OtherTrustStoreConfiguration {
      * Used by the standard fallback to load the store. A factory may also read this value.
      * When not set, the password can be retrieved from the credential provider configured on the parent trust store.
      */
-    Optional<String> password();
+    Optional<Secret<String>> password();
 
     /**
      * Alias of the certificate in the trust store.
